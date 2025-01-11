@@ -6,43 +6,29 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    // Menambahkan kolom-kolom yang bisa diisi massal
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'email',       // Menambahkan email ke dalam fillable
+        'password',    // Jangan lupa untuk menambahkan password
+        'role',        // Jika diperlukan, tambahkan role
+        'id_pemilik',  // Jika diperlukan, tambahkan id_pemilik
+        'id_pekerja',  // Jika diperlukan, tambahkan id_pekerja
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
+    // Kolom-kolom yang harus di-hash sebelum disimpan
     protected $hidden = [
-        'password',
+        'password',    // Password sebaiknya tidak terdeteksi ketika ditampilkan
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    // Jika Anda menggunakan laravel 8.x atau lebih tinggi, biasanya juga menambahkan `casts`
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
 }
