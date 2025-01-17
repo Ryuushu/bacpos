@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pekerja;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class PekerjaControllerApi extends Controller
@@ -18,10 +20,23 @@ class PekerjaControllerApi extends Controller
             'id_toko' => 'required|exists:toko,id_toko',
             'nama_pekerja' => 'required|string|max:100',
             'alamat_pekerja' => 'required|string|max:100',
+            'email' => 'required|string|email|max:50|unique:users,email',
+            'password' => 'required|string|min:6|confirmed',
+            'password_confirmation' => 'required|string|min:6',
         ]);
 
         try {
-            $pekerja = Pekerja::create($validated);
+            $user = User::create([
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => 'pekerja',
+            ]);
+            $pekerja = Pekerja::create([
+                'id_toko' => $request->id_toko,
+                'id_user' => $user->id_user,
+                'nama_pekerja' => $request->nama_pekerja,
+                'alamat_pekerja' => $request->alamat_pekerja,
+            ]);
             return response()->json([
                 'status' => 'success',
                 'message' => 'Pekerja created successfully.',
@@ -42,7 +57,7 @@ class PekerjaControllerApi extends Controller
      */
     public function index()
     {
-        $pekerja = Pekerja::all();
+        $pekerja = Pekerja::with('user')->get();
         return response()->json([
             'status' => 'success',
             'message' => 'Fetched all workers.',
@@ -55,7 +70,7 @@ class PekerjaControllerApi extends Controller
      */
     public function show($id)
     {
-        $pekerja = Pekerja::find($id);
+        $pekerja = Pekerja::with(['toko'])->where('id_toko',$id)->get();
 
         if (!$pekerja) {
             return response()->json([
@@ -77,15 +92,18 @@ class PekerjaControllerApi extends Controller
      */
     public function update(Request $request, $id)
     {
+       
         $validated = $request->validate([
             'id_toko' => 'required|exists:toko,id_toko',
             'nama_pekerja' => 'required|string|max:100',
             'alamat_pekerja' => 'required|string|max:100',
+            'email' => 'required|string|email|max:50|unique:users,email',
+            'password' => $request->filled('password') ? 'min:6|confirmed': '',
         ]);
 
         try {
-            $pekerja = Pekerja::find($id);
 
+            $pekerja = Pekerja::find($id);
             if (!$pekerja) {
                 return response()->json([
                     'status' => 'error',
@@ -93,8 +111,24 @@ class PekerjaControllerApi extends Controller
                     'errors' => 'No pekerja found with the given id.'
                 ], 404);
             }
-
-            $pekerja->update($validated);
+            $user = User::find($pekerja->id_user);
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User not found.',
+                ], 404);
+            }
+          
+            $user->email = $validated['email'];
+            if (!empty($validated['password'])) {
+                $user->password = Hash::make($validated['password']);
+            }
+            $user->save();
+            $pekerja->update([
+                'id_toko' => $validated['id_toko'],
+                'nama_pekerja' => $validated['nama_pekerja'],
+                'alamat_pekerja' => $validated['alamat_pekerja'],
+            ]);
 
             return response()->json([
                 'status' => 'success',

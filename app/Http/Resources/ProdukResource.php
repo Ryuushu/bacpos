@@ -11,11 +11,12 @@ class ProdukResource extends JsonResource
         return [
             'kode_produk' => $this->kode_produk,
             'nama_produk' => $this->nama_produk,
-            'kode_kategori' => $this->kode_kategori,
             'harga' => $this->harga,
             'stok' => $this->stok,
+            'is_stock_managed'=>$this->is_stock_managed,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'kategori' => new KategoriResource($this->whenLoaded('kategori')),
         ];
     }
 }

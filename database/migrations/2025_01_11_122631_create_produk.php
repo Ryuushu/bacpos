@@ -14,9 +14,11 @@ return new class extends Migration
         Schema::create('produk', function (Blueprint $table) {
             $table->id('kode_produk');
             $table->string('nama_produk', 30);
+            $table->foreignId('id_toko')->references("id_toko")->on("toko")->cascadeOnDelete()->cascadeOnUpdate();
             $table->foreignId('kode_kategori')->references("kode_kategori")->on("kategori")->cascadeOnDelete()->cascadeOnUpdate();
             $table->integer('harga');
-            $table->integer('stok');
+            $table->integer('stok')->nullable(); // Stok opsional
+            $table->boolean('is_stock_managed')->default(true); // Indikator stok dikelola
             $table->timestamps();
         });
     }

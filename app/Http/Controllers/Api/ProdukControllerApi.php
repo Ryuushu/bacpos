@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProdukResource;
+use App\Models\KartuStok;
 use App\Models\Produk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,14 +17,30 @@ class ProdukControllerApi extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama_produk' => 'required|string|max:30',
+            'id_toko' => 'required|exists:toko,id_toko',
             'kode_kategori' => 'required|exists:kategori,kode_kategori',
-            'harga' => 'required|integer|min:1',
-            'stok' => 'required|integer|min:0',
+            'nama_produk' => 'required|string|max:255',
+            'harga' => 'required|integer|min:0',
+            'stok' =>  $request->filled('stok')?'integer|min:0':'',
+            'is_stock_managed'=> 'int'
         ]);
 
         try {
             $produk = Produk::create($validated);
+            if ($request->input('is_stock_managed') == 1) {
+                // Create or update the stock card entry (you should replace this with the actual model and logic)
+                KartuStok::create([
+                    'id_toko' => $produk->id_toko,
+                'kode_produk' => $produk->kode_produk, 
+                'tanggal' => now(), 
+                'jenis_transaksi' => 'masuk',
+                'jumlah' => $produk->stok, 
+                'stok_awal' => 0, 
+                'stok_akhir' => $produk->stok, 
+                'keterangan' => 'Stok Masuk', 
+                'created_at' => now(),
+                ]);
+            }
             return response()->json([
                 'status' => 'success',
                 'message' => 'Produk created successfully.',
@@ -44,7 +61,7 @@ class ProdukControllerApi extends Controller
      */
     public function index()
     {
-        $produk = Produk::all();
+        $produk =Produk::with(['toko', 'kategori'])->get();
         return response()->json([
             'status' => 'success',
             'message' => 'Fetched all products.',
@@ -55,9 +72,14 @@ class ProdukControllerApi extends Controller
     /**
      * Show a single Produk.
      */
-    public function show($id)
+    public function shows($id,$bool)
     {
-        $produk = Produk::find($id);
+        $bool=="true"?
+            $produk = Produk::with(['toko', 'kategori'])->where('id_toko',$id)->where('is_stock_managed',1)->get()
+:
+            $produk = Produk::with(['toko', 'kategori'])->where('id_toko',$id)->get();
+          
+ 
 
         if (!$produk) {
             return response()->json([
@@ -70,7 +92,7 @@ class ProdukControllerApi extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Produk found.',
-            'data' => new ProdukResource($produk)
+            'data' => ProdukResource::collection($produk) 
         ], 200);
     }
 
@@ -79,15 +101,16 @@ class ProdukControllerApi extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validated = $request->validate([
-            'nama_produk' => 'required|string|max:30',
-            'kode_kategori' => 'required|exists:kategori,kode_kategori',
-            'harga' => 'required|integer|min:1',
-            'stok' => 'required|integer|min:0',
-        ]);
-
         try {
-            $produk = Produk::find($id);
+
+        $produk = Produk::findOrFail($id);
+        $validated = $request->validate([
+            'id_toko' => 'sometimes|exists:toko,id_toko',
+            'id_kategori' => 'sometimes|exists:kategori,id_kategori',
+            'nama_produk' => 'sometimes|string|max:255',
+            'harga' => 'sometimes|integer|min:0',
+            'stok' => $request->filled('stok')?'integer|min:0':'',
+        ]);
 
             if (!$produk) {
                 return response()->json([
@@ -120,7 +143,7 @@ class ProdukControllerApi extends Controller
     public function destroy($id)
     {
         try {
-            $produk = Produk::find($id);
+            $produk = Produk::findOrFail($id);
 
             if (!$produk) {
                 return response()->json([

@@ -16,8 +16,6 @@ return new class extends Migration
             $table->string('email', 50)->unique();
             $table->string('password', 100);
             $table->enum('role', ['pemilik', 'pekerja']);
-            $table->foreignId('id_pemilik')->nullable()->constrained('pemilik', 'id_pemilik')->nullOnDelete();
-            $table->foreignId('id_pekerja')->nullable()->constrained('pekerja', 'id_pekerja')->nullOnDelete();
             $table->timestamps();
         });
         Schema::create('sessions', function (Blueprint $table) {

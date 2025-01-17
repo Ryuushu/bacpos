@@ -8,21 +8,23 @@ class Pemilik extends Model
 {
     use HasFactory;
 
-    // Nama tabel jika berbeda dengan nama model
     protected $table = 'pemilik';
-
-    // Kolom yang dapat diisi (Mass Assignment)
-    protected $fillable = [
-        'nama_pemilik',
-        'alamat_pemilik',
-    ];
-
-    // Jika Anda ingin menggunakan timestamps, pastikan kolom created_at dan updated_at ada
+    protected $primaryKey = 'id_pemilik';
     public $timestamps = true;
 
-    // Relasi dengan model User
-    public function users()
+    protected $fillable = [
+        'id_user',
+        'nama_pemilik',
+    ];
+
+    public function user()
     {
-        return $this->hasMany(User::class, 'id_pemilik');
+        return $this->belongsTo(User::class, 'id_user');
+    }
+
+    public function toko()
+    {
+        return $this->hasMany(Toko::class, 'id_pemilik');
     }
 }
+
