@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('harga');
             $table->integer('stok')->nullable(); // Stok opsional
             $table->boolean('is_stock_managed')->default(true); // Indikator stok dikelola
+            $table->string('url_img')->nullable();
             $table->timestamps();
         });
     }

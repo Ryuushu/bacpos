@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('detail_transaksi', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_transaksi')->references("id_transaksi")->on("transaksi")->cascadeOnDelete()->cascadeOnUpdate();
+            $table->string('id_transaksi', 25);
+            $table->foreign('id_transaksi')->references('id_transaksi')->on('transaksi')->cascadeOnDelete()->cascadeOnUpdate();
             $table->foreignId('kode_produk')->references("kode_produk")->on("produk")->cascadeOnDelete()->cascadeOnUpdate();
             $table->integer('harga');
             $table->integer('qty');

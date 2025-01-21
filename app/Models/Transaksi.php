@@ -11,11 +11,14 @@ class Transaksi extends Model
     protected $table = 'transaksi';
     protected $primaryKey = 'id_transaksi';
     public $timestamps = true;
+    public $incrementing = false;
+
 
     protected $fillable = [
+        'id_transaksi',
         'id_toko',
-        'id_pekerja',
-        'total_harga',
+        'id_user',
+        'totalharga',
         'pembayaran',
         'kembalian',
     ];
@@ -25,9 +28,9 @@ class Transaksi extends Model
         return $this->belongsTo(Toko::class, 'id_toko');
     }
 
-    public function pekerja()
+    public function user()
     {
-        return $this->belongsTo(Pekerja::class, 'id_pekerja');
+        return $this->belongsTo(User::class, 'id_user');
     }
 
     public function detailTransaksi()
