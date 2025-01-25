@@ -87,7 +87,7 @@ class TransaksiControllerApi extends Controller
                 if ($produk->is_stok_management) {
                     $stokAwal = $produk->stok;
                     $produk->decrement('stok', $item['qty']);
-                    $stokAkhir = $produk->stok;
+                    $stokAkhir = $produk->stok; 
 
                     // Menambahkan ke tabel kartustok
                     KartuStok::create([

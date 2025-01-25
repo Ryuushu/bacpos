@@ -70,7 +70,7 @@ class PekerjaControllerApi extends Controller
      */
     public function show($id)
     {
-        $pekerja = Pekerja::with(['toko'])->where('id_toko',$id)->get();
+        $pekerja = Pekerja::with(['user'])->where('id_toko',$id)->get();
 
         if (!$pekerja) {
             return response()->json([

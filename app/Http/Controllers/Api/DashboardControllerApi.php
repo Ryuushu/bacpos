@@ -35,28 +35,11 @@ class DashboardControllerApi extends Controller
             ], 404);
         }
 
-        // Data yang akan ditampilkan di dashboard
-        $produkCount =  Produk::whereIn('id_toko', $toko->pluck('id_toko'))->count();
-        $transaksiCount = Transaksi::whereIn('id_toko', $toko->pluck('id_toko'))->count();
-        $totalPendapatan = Transaksi::whereIn('id_toko', $toko->pluck('id_toko'))->sum('totalharga');
-        if ($produkCount === 0) {
-            $produkCount = 0; // Jika tidak ada produk, set menjadi 0
-        }
-        if ($transaksiCount === 0) {
-            $transaksiCount = 0; // Jika tidak ada transaksi, set menjadi 0
-        }
-        if ($totalPendapatan === null) {
-            $totalPendapatan = 0; // Jika tidak ada pendapatan, set menjadi 0
-        }
+       
         return response()->json([
             'status' => 'success',
             'message' => 'Data successful',
-            'data' => [
-                'toko' => $toko,
-                'produk_count' => $produkCount,
-                'transaksi_count' => $transaksiCount,
-                'total_pendapatan' => $totalPendapatan,
-            ]
+            'data' => $toko
         ]);
     }
     public function listtokobypemilik(Request $request)

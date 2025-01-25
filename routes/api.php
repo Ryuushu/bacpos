@@ -24,7 +24,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('produk/{id}/{bool}', [ProdukControllerApi::class, 'shows']);
     Route::get('riwayattransaksi/{id_toko}', [TransaksiControllerApi::class, 'riwayat']);
     Route::get('kartustok/{kodep}/{type}', [KartuStokControllerApi::class, 'shows']);
-
+    Route::post('/s', [StokControllerApi::class, 'searchBykodepwitharray']);
+    Route::get('/dashboardtoko/{idtoko}', [TokoControllerApi::class, 'dashboardtoko']);
+    Route::post('/svopname', [StokControllerApi::class, 'addstokopname']);
 
     // Route::apiResource('users', UserControllerApi::class)    ;
     // Route::apiResource('pemilik', PemilikControllerApi::class);
