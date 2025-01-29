@@ -87,7 +87,7 @@ class TransaksiControllerApi extends Controller
                 if ($produk->is_stok_management) {
                     $stokAwal = $produk->stok;
                     $produk->decrement('stok', $item['qty']);
-                    $stokAkhir = $produk->stok; 
+                    $stokAkhir = $produk->stok;
 
                     // Menambahkan ke tabel kartustok
                     KartuStok::create([
@@ -126,36 +126,52 @@ class TransaksiControllerApi extends Controller
             ], 500);
         }
     }
-    public function riwayat($id_toko)
+    public function riwayat($id_toko, Request $request)
     {
-        $transaksi = Transaksi::with('toko', 'user', 'detailTransaksi.produk')
-        ->where('id_toko', $id_toko)
-        ->get();
-    
-    // Jika tidak ada transaksi untuk toko tersebut
-    if ($transaksi->isEmpty()) {
-        return response()->json(['message' => 'Tidak ada transaksi ditemukan untuk toko ini.'], 404);
-    }
-    
-    // Mengelompokkan transaksi berdasarkan tanggal
-    $transaksiGrouped = $transaksi->groupBy(function ($item) {
-        return Carbon::parse($item->created_at)->format('Y-m-d'); // Group berdasarkan tanggal
-    });
-    
-    // Menambahkan total per grup
-    $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
-        $total = $group->sum(function ($item) {
-            return $item->detailTransaksi->sum('harga'); // Asumsikan `harga` adalah total per detail transaksi
+        // Validasi parameter StartDate dan EndDate
+        $validated = $request->validate([
+            'start_date' => 'nullable|date|before_or_equal:end_date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        // Ambil parameter StartDate dan EndDate dari request
+        $startDate = $validated['start_date'] ?? null;
+        $endDate = $validated['end_date'] ?? null;
+
+        // Query transaksi dengan filter tanggal jika diberikan
+        $transaksiQuery = Transaksi::with('toko', 'user', 'detailTransaksi.produk')
+            ->where('id_toko', $id_toko);
+
+        if ($startDate && $endDate) {
+            $transaksiQuery->whereBetween('created_at', [$startDate, $endDate]);
+        }
+
+        $transaksi = $transaksiQuery->get();
+
+        // Jika tidak ada transaksi untuk toko tersebut
+        // if ($transaksi->isEmpty()) {
+        //     return response()->json(['message' => 'Tidak ada transaksi ditemukan untuk toko ini.'], 404);
+        // }
+
+        // Mengelompokkan transaksi berdasarkan tanggal
+        $transaksiGrouped = $transaksi->groupBy(function ($item) {
+            return Carbon::parse($item->created_at)->format('Y-m-d'); // Group berdasarkan tanggal
         });
-        return [
-            'total' => $total,
-            'data' => $group,
-        ];
-    });
-    
-    return response()->json([
-        'message' => 'Checkout berhasil',
-        'data' => $transaksiWithSum,
-    ]);
+
+        // Menambahkan total per grup
+        $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
+            $total = $group->sum(function ($item) {
+                return $item->detailTransaksi->sum('harga'); // Asumsikan `harga` adalah total per detail transaksi
+            });
+            return [
+                'total' => $total,
+                'data' => $group,
+            ];
+        });
+
+        return response()->json([
+            'message' => 'Data transaksi berhasil diambil',
+            'data' => $transaksiWithSum,
+        ]);
     }
 }

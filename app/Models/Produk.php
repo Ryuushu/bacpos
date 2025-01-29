@@ -19,6 +19,8 @@ class Produk extends Model
         'nama_produk',
         'harga',
         'stok',
+        'stok',
+        'url_img',
         'is_stock_managed'
     ];
 

@@ -27,6 +27,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/s', [StokControllerApi::class, 'searchBykodepwitharray']);
     Route::get('/dashboardtoko/{idtoko}', [TokoControllerApi::class, 'dashboardtoko']);
     Route::post('/svopname', [StokControllerApi::class, 'addstokopname']);
+    Route::post('/produk/{id}',[ProdukControllerApi::class, 'update']);
+    Route::post('/toko/{id}',[TokoControllerApi::class, 'update']);
 
     // Route::apiResource('users', UserControllerApi::class)    ;
     // Route::apiResource('pemilik', PemilikControllerApi::class);

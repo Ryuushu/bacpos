@@ -8,6 +8,7 @@ use App\Models\KartuStok;
 use App\Models\Produk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ProdukControllerApi extends Controller
 {
@@ -16,34 +17,57 @@ class ProdukControllerApi extends Controller
      */
     public function store(Request $request)
     {
+
+        // return response()->json([
+        //     'status' => 'success',
+        //     'message' => 'Produk created successfully.',
+        //     'data' => $request->input('stok')
+        // ], 201);
+
         $validated = $request->validate([
             'id_toko' => 'required|exists:toko,id_toko',
             'kode_kategori' => 'required|exists:kategori,kode_kategori',
             'nama_produk' => 'required|string|max:255',
             'harga' => 'required|integer|min:0',
-            'stok' =>  $request->filled('stok')?'integer|min:0':'',
-            'is_stock_managed'=> 'int'
+            'stok' =>  $request->input('stok') != "null" ? 'integer|min:0' : '',
+            'is_stock_managed' => 'int',
+            'url_img' => 'sometimes|image|mimes:jpg,jpeg,png|max:2048', // Validate image upload
         ]);
 
         try {
+
+            if ($request->hasFile('url_img')) {
+                $file = $request->file('url_img');
+                $imagePath = $file->store('images/produk', 'public');
+            } else {
+                $imagePath = null; // No image uploaded
+            }
+
+            // Create the product
+            if ($validated['stok'] == "null") {
+                unset($validated['stok']);
+            }
+            $validated['url_img'] = $imagePath; // Store the image URL in the database
             $produk = Produk::create($validated);
+
             if ($request->input('is_stock_managed') == 1) {
-                // Create or update the stock card entry (you should replace this with the actual model and logic)
+                // Create or update the stock card entry
                 KartuStok::create([
                     'id_toko' => $produk->id_toko,
-                'kode_produk' => $produk->kode_produk, 
-                'tanggal' => now(), 
-                'jenis_transaksi' => 'masuk',
-                'jumlah' => $produk->stok, 
-                'stok_awal' => 0, 
-                'stok_akhir' => $produk->stok, 
-                'keterangan' => 'Stok Masuk', 
-                'created_at' => now(),
+                    'kode_produk' => $produk->kode_produk,
+                    'tanggal' => now(),
+                    'jenis_transaksi' => 'masuk',
+                    'jumlah' => $produk->stok,
+                    'stok_awal' => 0,
+                    'stok_akhir' => $produk->stok,
+                    'keterangan' => 'Stok Masuk',
+                    'created_at' => now(),
                 ]);
             }
+
             return response()->json([
                 'status' => 'success',
-                'message' => 'Produk created successfully.',
+                'message' => $imagePath,
                 'data' => new ProdukResource($produk)
             ], 201);
         } catch (\Exception $e) {
@@ -61,7 +85,7 @@ class ProdukControllerApi extends Controller
      */
     public function index()
     {
-        $produk =Produk::with(['toko', 'kategori'])->get();
+        $produk = Produk::with(['toko', 'kategori'])->get();
         return response()->json([
             'status' => 'success',
             'message' => 'Fetched all products.',
@@ -72,14 +96,14 @@ class ProdukControllerApi extends Controller
     /**
      * Show a single Produk.
      */
-    public function shows($id,$bool)
+    public function shows($id, $bool)
     {
-        $bool=="true"?
-            $produk = Produk::with(['toko', 'kategori'])->where('id_toko',$id)->where('is_stock_managed',1)->get()
-:
-            $produk = Produk::with(['toko', 'kategori'])->where('id_toko',$id)->get();
-          
- 
+        $bool == "true" ?
+            $produk = Produk::with(['toko', 'kategori'])->where('id_toko', $id)->where('is_stock_managed', 1)->get()
+            :
+            $produk = Produk::with(['toko', 'kategori'])->where('id_toko', $id)->get();
+
+
 
         if (!$produk) {
             return response()->json([
@@ -92,7 +116,7 @@ class ProdukControllerApi extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Produk found.',
-            'data' => ProdukResource::collection($produk) 
+            'data' => ProdukResource::collection($produk)
         ], 200);
     }
 
@@ -102,23 +126,30 @@ class ProdukControllerApi extends Controller
     public function update(Request $request, $id)
     {
         try {
+           
+            $produk = Produk::findOrFail($id);
 
-        $produk = Produk::findOrFail($id);
-        $validated = $request->validate([
-            'id_toko' => 'sometimes|exists:toko,id_toko',
-            'id_kategori' => 'sometimes|exists:kategori,id_kategori',
-            'nama_produk' => 'sometimes|string|max:255',
-            'harga' => 'sometimes|integer|min:0',
-            'stok' => $request->filled('stok')?'integer|min:0':'',
-        ]);
+            $validated = $request->validate([
+                // 'id_toko' => 'sometimes|exists:toko,id_toko',
+                'kode_kategori' => 'sometimes|exists:kategori,kode_kategori',
+                'nama_produk' => 'sometimes|string|max:255',
+                'harga' => 'sometimes|integer|min:0',
+                'stok' =>  $request->input('stok') != "null" ? 'integer|min:0' : '',
+                'url_img' => 'sometimes|image|mimes:jpg,jpeg,png,gif|max:2048', // Validate image upload
+            ]);
+           
+            
+            // Handle image upload (update)
+            if ($request->hasFile('url_img')) {
+                // If an old image exists, delete it from storage
+                if ($produk->url_img && Storage::exists('public/' . $produk->url_img)) {
+                    Storage::delete('public/' . $produk->url_img);
+                }
 
-            if (!$produk) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Produk not found.',
-                    'errors' => 'No produk found with the given id.'
-                ], 404);
+                $imagePath = $request->file('url_img')->store('images/produk', 'public'); // Store image in 'public/images' folder
+                $validated['url_img'] = $imagePath; // Update the image URL
             }
+
 
             $produk->update($validated);
 

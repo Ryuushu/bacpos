@@ -16,6 +16,9 @@ class Toko extends Model
         'id_pemilik',
         'nama_toko',
         'alamat_toko',
+        'whatsapp',
+        'instagram',
+        'url_img'
     ];
 
     public function pemilik()

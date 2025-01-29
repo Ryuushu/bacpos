@@ -16,6 +16,9 @@ return new class extends Migration
             $table->foreignId('id_pemilik')->references("id_pemilik")->on("pemilik")->cascadeOnDelete()->cascadeOnUpdate();
             $table->string('nama_toko', 100);
             $table->string('alamat_toko', 100);
+            $table->string('whatsapp', 15);
+            $table->string('instagram', 100);
+            $table->string('url_img')->nullable();
             $table->timestamps();
         });
     }
