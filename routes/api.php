@@ -15,6 +15,9 @@ use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
 Route::post('register', [AuthControllerApi::class, 'register']);
 Route::post('login', [AuthControllerApi::class, 'login']);
+Route::post('verify-otp', [AuthControllerApi::class, 'verifyOtp']);
+Route::post('forgot-password', [AuthControllerApi::class, 'forgotPassword']);
+Route::post('reset-password', [AuthControllerApi::class, 'resetPassword']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthControllerApi::class, 'logout']);
@@ -29,7 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/svopname', [StokControllerApi::class, 'addstokopname']);
     Route::post('/produk/{id}',[ProdukControllerApi::class, 'update']);
     Route::post('/toko/{id}',[TokoControllerApi::class, 'update']);
-
+  
     // Route::apiResource('users', UserControllerApi::class)    ;
     // Route::apiResource('pemilik', PemilikControllerApi::class);
     Route::apiResource('toko', TokoControllerApi::class);

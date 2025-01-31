@@ -8,6 +8,7 @@ use App\Models\KartuStok;
 use App\Models\Produk;
 use Illuminate\Http\Request;
 use App\Models\Transaksi;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -54,11 +55,11 @@ class TransaksiControllerApi extends Controller
                 $subtotal = $harga * $item['qty'];
 
                 // Validasi ketersediaan stok produk jika is_stok_management true
-                if ($produk->is_stok_management && $produk->stok < $item['qty']) {
+                if ($produk->is_stock_managed && $produk->stok < $item['qty']) {
                     // Rollback transaksi jika stok tidak cukup
                     DB::rollBack();
                     return response()->json([
-                        'message' => 'Stok produk ' . $produk->nama . ' tidak cukup',
+                        'message' => 'Stok produk ' . $produk->nama_produk . ' tidak cukup',
                     ], 400);
                 }
 
@@ -84,7 +85,7 @@ class TransaksiControllerApi extends Controller
 
             foreach ($validated['items'] as $item) {
                 $produk = Produk::findOrFail($item['kode_produk']);
-                if ($produk->is_stok_management) {
+                if ($produk->is_stock_managed) {
                     $stokAwal = $produk->stok;
                     $produk->decrement('stok', $item['qty']);
                     $stokAkhir = $produk->stok;
@@ -105,6 +106,34 @@ class TransaksiControllerApi extends Controller
                 'totalharga' => $totalHarga,
                 'kembalian' => $validated['bayar'] - $totalHarga,
             ]);
+            $user = User::with(['pekerja', 'pemilik', 'toko'])->find($validated['id_user']);
+
+            // Tentukan apakah user pekerja atau pemilik
+            $userInfo = [
+                'id_user' => $user->id_user,
+                'nama' => $user->pekerja ? $user->pekerja->nama_pekerja : ($user->pemilik ? $user->pemilik->nama_pemilik : null),
+                'posisi' => $user->pekerja ? "pekerja" : 'Pemilik',
+            ];
+            if ($user->toko->url_img) {
+                $path = storage_path('app/public/' . $user->toko->url_img);
+
+                if (file_exists($path)) {
+                    $imageData = base64_encode(file_get_contents($path));
+                    $mimeType = mime_content_type($path);
+                    $base64Image = 'data:' . $mimeType . ';base64,' . $imageData;
+                }
+            }
+
+
+
+            $tokoInfo = $user->toko ? [
+                'id_toko' => $user->toko->id_toko,
+                'nama_toko' => $user->toko->nama_toko,
+                'alamat_toko' => $user->toko->alamat_toko,
+                'whatsapp' => $user->toko->whatsapp,
+                'instagram' => $user->toko->instagram,
+                'img' => $user->toko->url_img ? $base64Image : null,
+            ] : null;
 
             // Commit transaksi jika semua berhasil
             DB::commit();
@@ -115,6 +144,9 @@ class TransaksiControllerApi extends Controller
                 'totalharga' => $totalHarga,
                 'pembayaran' => $validated['bayar'],
                 'kembalian' => $transaksi->kembalian,
+                'create_at' => $transaksi->create_at,
+                'user' => $userInfo,
+                'toko' => $tokoInfo,
                 'items' => $itemsDetails,
             ]);
         } catch (\Exception $e) {
@@ -133,17 +165,20 @@ class TransaksiControllerApi extends Controller
             'start_date' => 'nullable|date|before_or_equal:end_date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
-
         // Ambil parameter StartDate dan EndDate dari request
-        $startDate = $validated['start_date'] ?? null;
-        $endDate = $validated['end_date'] ?? null;
+        $startDate = $validated['start_date'] ?? Carbon::now()->toDateString();
+        $endDate = $validated['end_date'] ?? Carbon::now()->toDateString();
+
 
         // Query transaksi dengan filter tanggal jika diberikan
-        $transaksiQuery = Transaksi::with('toko', 'user', 'detailTransaksi.produk')
+        $transaksiQuery = Transaksi::with('toko', 'user.pekerja', 'user.pemilik', 'detailTransaksi.produk')
             ->where('id_toko', $id_toko);
 
         if ($startDate && $endDate) {
-            $transaksiQuery->whereBetween('created_at', [$startDate, $endDate]);
+            $transaksiQuery->whereBetween('created_at', [
+                $startDate . ' 00:00:00',
+                $endDate . ' 23:59:59'
+            ]);
         }
 
         $transaksi = $transaksiQuery->get();

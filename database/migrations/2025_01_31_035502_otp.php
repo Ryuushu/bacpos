@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('kategori', function (Blueprint $table) {
-            $table->id('kode_kategori');
-            $table->string('nama_kategori', 30);
-            $table->unsignedBigInteger('id_toko');
-            $table->foreign('id_toko')->references('id_toko')->on('toko')->onDelete('cascade');
+        Schema::create('otps', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('id_user');
+            $table->string('otp');
+            $table->timestamp('expires_at');
             $table->timestamps();
-            
+
+            $table->foreign('id_user')->references('id_user')->on('users')->onDelete('cascade');
         });
     }
 
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('kategori');
+        //
     }
 };

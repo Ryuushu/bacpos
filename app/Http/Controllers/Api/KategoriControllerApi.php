@@ -16,7 +16,8 @@ class KategoriControllerApi extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama_kategori' => 'required|string|max:30|unique:kategori,nama_kategori',
+            'id_toko' => 'required|exists:toko,id_toko',
+        'nama_kategori' => 'required|string|max:30|unique:kategori,nama_kategori,NULL,id_kategori,id_toko,' . $request->id_toko,
         ]);
 
         try {
@@ -37,14 +38,19 @@ class KategoriControllerApi extends Controller
     }
 
     /**
-     * Get all Kategori.
+     * Get all Kategori for a specific Toko.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $kategori = Kategori::all();
+        $request->validate([
+            'id_toko' => 'required|exists:toko,id_toko'
+        ]);
+
+        $kategori = Kategori::where('id_toko', $request->id_toko)->get();
+
         return response()->json([
             'status' => 'success',
-            'message' => 'Fetched all categories.',
+            'message' => 'Fetched all categories for the toko.',
             'data' => KategoriResource::collection($kategori)
         ], 200);
     }
@@ -77,7 +83,8 @@ class KategoriControllerApi extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'nama_kategori' => 'required|string|max:30|unique:kategori,nama_kategori,' . $id . ',kode_kategori',
+            'id_toko' => 'required|exists:toko,id_toko',
+            'nama_kategori' => 'required|string|max:30|unique:kategori,nama_kategori'
         ]);
 
         try {

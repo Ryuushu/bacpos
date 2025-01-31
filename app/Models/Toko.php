@@ -20,7 +20,10 @@ class Toko extends Model
         'instagram',
         'url_img'
     ];
-
+    public function kategori()
+    {
+        return $this->hasMany(Kategori::class, 'id_toko');
+    }
     public function pemilik()
     {
         return $this->belongsTo(Pemilik::class, 'id_pemilik');
@@ -30,5 +33,6 @@ class Toko extends Model
     {
         return $this->hasMany(Pekerja::class, 'id_toko');
     }
+    
 }
 

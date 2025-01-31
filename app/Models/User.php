@@ -18,6 +18,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_verified'
     ];
 
     protected $hidden = [
@@ -32,5 +33,9 @@ class User extends Authenticatable
     public function pekerja()
     {
         return $this->hasOne(Pekerja::class, 'id_user');
+    }
+    public function toko()
+    {
+        return $this->hasOneThrough(Toko::class, Pemilik::class, 'id_user', 'id_pemilik', 'id_user', 'id_user');
     }
 }
