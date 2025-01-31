@@ -15,6 +15,7 @@ class Kategori extends Model
 
     protected $fillable = [
         'nama_kategori',
+        'is_stok',
         'id_toko'
     ];
     public function toko()

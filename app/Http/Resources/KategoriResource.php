@@ -11,6 +11,7 @@ class KategoriResource extends JsonResource
         return [
             'kode_kategori' => $this->kode_kategori,
             'nama_kategori' => $this->nama_kategori,
+            'is_stok' => $this->is_stok,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

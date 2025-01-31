@@ -148,7 +148,7 @@ class TokoControllerApi extends Controller
             $urlImg = $toko->url_img; // Keep the existing image if no new one is uploaded
             if ($request->hasFile('url_img')) {
                 $image = $request->file('url_img');
-                $urlImg = $image->store('images', 'public'); // Store new image and update URL
+                $urlImg = $image->store('images/toko', 'public'); // Store new image and update URL
             }
 
             $toko->update([

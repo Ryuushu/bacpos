@@ -17,7 +17,8 @@ class KategoriControllerApi extends Controller
     {
         $validated = $request->validate([
             'id_toko' => 'required|exists:toko,id_toko',
-        'nama_kategori' => 'required|string|max:30|unique:kategori,nama_kategori,NULL,id_kategori,id_toko,' . $request->id_toko,
+            'nama_kategori' => 'required|string|max:30|unique:kategori,nama_kategori,NULL,id_kategori,id_toko,' . $request->id_toko,
+            'is_stok' => 'required'
         ]);
 
         try {
@@ -84,7 +85,8 @@ class KategoriControllerApi extends Controller
     {
         $validated = $request->validate([
             'id_toko' => 'required|exists:toko,id_toko',
-            'nama_kategori' => 'required|string|max:30|unique:kategori,nama_kategori'
+            'nama_kategori' => 'required|string|max:30',
+            'is_stok' => 'required'
         ]);
 
         try {

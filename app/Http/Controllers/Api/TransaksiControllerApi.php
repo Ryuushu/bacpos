@@ -120,7 +120,7 @@ class TransaksiControllerApi extends Controller
                 if (file_exists($path)) {
                     $imageData = base64_encode(file_get_contents($path));
                     $mimeType = mime_content_type($path);
-                    $base64Image = 'data:' . $mimeType . ';base64,' . $imageData;
+                    $base64Image = $imageData;
                 }
             }
 
