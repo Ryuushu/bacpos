@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\DetailTransaksi;
 use App\Models\KartuStok;
 use App\Models\Produk;
+use App\Models\Toko;
 use Illuminate\Http\Request;
 use App\Models\Transaksi;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TransaksiControllerApi extends Controller
 {
@@ -106,16 +108,17 @@ class TransaksiControllerApi extends Controller
                 'totalharga' => $totalHarga,
                 'kembalian' => $validated['bayar'] - $totalHarga,
             ]);
-            $user = User::with(['pekerja', 'pemilik', 'toko'])->find($validated['id_user']);
+            $user = User::with(['pekerja', 'pemilik'])->find($validated['id_user']);
+            $toko = Toko::find($validated['id_toko']);
 
-            // Tentukan apakah user pekerja atau pemilik
+
             $userInfo = [
                 'id_user' => $user->id_user,
                 'nama' => $user->pekerja ? $user->pekerja->nama_pekerja : ($user->pemilik ? $user->pemilik->nama_pemilik : null),
                 'posisi' => $user->pekerja ? "pekerja" : 'Pemilik',
             ];
-            if ($user->toko->url_img) {
-                $path = storage_path('app/public/' . $user->toko->url_img);
+            if ($toko->url_img) {
+                $path = storage_path('app/public/' . $toko->url_img);
 
                 if (file_exists($path)) {
                     $imageData = base64_encode(file_get_contents($path));
@@ -123,16 +126,14 @@ class TransaksiControllerApi extends Controller
                     $base64Image = $imageData;
                 }
             }
-
-
-
-            $tokoInfo = $user->toko ? [
-                'id_toko' => $user->toko->id_toko,
-                'nama_toko' => $user->toko->nama_toko,
-                'alamat_toko' => $user->toko->alamat_toko,
-                'whatsapp' => $user->toko->whatsapp,
-                'instagram' => $user->toko->instagram,
-                'img' => $user->toko->url_img ? $base64Image : null,
+            $tokoInfo = $toko ? [
+                'id_toko' => $toko->id_toko,
+                'nama_toko' => $toko->nama_toko,
+                'alamat_toko' => $toko->alamat_toko,
+                'whatsapp' => $toko->whatsapp,
+                'instagram' => $toko->instagram,
+                'img' => $toko->url_img != null ? $base64Image : null,
+                'mime' => $toko->url_img != null ? $mimeType : null
             ] : null;
 
             // Commit transaksi jika semua berhasil
@@ -150,6 +151,10 @@ class TransaksiControllerApi extends Controller
                 'items' => $itemsDetails,
             ]);
         } catch (\Exception $e) {
+            Log::error('Transaksi gagal: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id' => auth()->id_user ?? null, // Opsional, simpan ID user jika ada
+            ]);
             // Rollback transaksi jika terjadi error
             DB::rollBack();
             return response()->json([

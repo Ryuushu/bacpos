@@ -38,7 +38,8 @@ class ProdukControllerApi extends Controller
 
             if ($request->hasFile('url_img')) {
                 $file = $request->file('url_img');
-                $imagePath = $file->store('images/produk', 'public');
+                $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $imagePath = $file->move("uploadfile/produk/", $fileName);
             } else {
                 $imagePath = null; // No image uploaded
             }
@@ -134,22 +135,26 @@ class ProdukControllerApi extends Controller
                 'kode_kategori' => 'sometimes|exists:kategori,kode_kategori',
                 'nama_produk' => 'sometimes|string|max:255',
                 'harga' => 'sometimes|integer|min:0',
-                'stok' =>  $request->input('stok') != "null" ? 'integer|min:0' : '',
+               'stok' =>  $request->input('stok') != "null"? 'sometimes|integer|min:0' : 'sometimes',
                 'url_img' => 'sometimes|image|mimes:jpg,jpeg,png,gif|max:2048', // Validate image upload
             ]);
            
-            
-            // Handle image upload (update)
-            if ($request->hasFile('url_img')) {
-                // If an old image exists, delete it from storage
-                if ($produk->url_img && Storage::exists('public/' . $produk->url_img)) {
-                    Storage::delete('public/' . $produk->url_img);
-                }
-
-                $imagePath = $request->file('url_img')->store('images/produk', 'public'); // Store image in 'public/images' folder
-                $validated['url_img'] = $imagePath; // Update the image URL
+            if ($validated['stok'] == "null") {
+                unset($validated['stok']);
             }
-
+            // Handle image upload (update)
+           if ($request->hasFile('url_img')) {
+                $file = $request->file('url_img'); 
+            
+                $oldPath = public_path($produk->url_img);
+                if ($produk->url_img && file_exists($oldPath)) { // Perbaiki kurung tutup
+                    unlink($oldPath);
+                }
+                // Simpan file baru dengan nama unik
+                $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $imagePath = $file->move("uploadfile/produk/", $fileName);
+                $validated['url_img'] = $imagePath;
+            }
 
             $produk->update($validated);
 
@@ -183,7 +188,10 @@ class ProdukControllerApi extends Controller
                     'errors' => 'No produk found with the given id.'
                 ], 404);
             }
-
+                $oldPath = public_path($produk->url_img);
+                if (is_file($oldPath) && file_exists($oldPath)) { // Perbaiki kurung tutup
+                    unlink($oldPath);
+                }
             $produk->delete();
 
             return response()->json([

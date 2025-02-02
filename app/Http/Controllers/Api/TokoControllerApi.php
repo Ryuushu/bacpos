@@ -61,10 +61,13 @@ class TokoControllerApi extends Controller
 
             $urlImg = null;
             if ($request->hasFile('url_img')) {
-                $image = $request->file('url_img');
-                $urlImg = $image->store('images/toko', 'public'); // Store image in 'public/images' directory
+                $file = $request->file('url_img');
+                $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $urlImg = $file->move("uploadfile/toko/", $fileName);
+            } else {
+                $urlImg = null; // No image uploaded
             }
-
+           
             $toko = Toko::create([
                 'id_pemilik' => $pemilik->id_pemilik,  // Assign the pemilik's id
                 'nama_toko' => $request->nama_toko,
@@ -147,8 +150,15 @@ class TokoControllerApi extends Controller
 
             $urlImg = $toko->url_img; // Keep the existing image if no new one is uploaded
             if ($request->hasFile('url_img')) {
-                $image = $request->file('url_img');
-                $urlImg = $image->store('images/toko', 'public'); // Store new image and update URL
+                $file = $request->file('url_img'); 
+            
+                $oldPath = public_path($toko->url_img);
+                if ($toko->url_img && file_exists($oldPath)) { // Perbaiki kurung tutup
+                    unlink($oldPath);
+                }
+                // Simpan file baru dengan nama unik
+                $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $urlImg = $file->move("uploadfile/toko/", $fileName);
             }
 
             $toko->update([
@@ -197,7 +207,10 @@ class TokoControllerApi extends Controller
                 'message' => 'Toko not found or you do not have permission to delete this toko.',
             ], 404);
         }
-
+        $oldPath = public_path($toko->url_img);
+            if (is_file($oldPath) && file_exists($oldPath)) { // Perbaiki kurung tutup
+                unlink($oldPath);
+            }
         $toko->delete();
 
         return response()->json([
@@ -210,8 +223,9 @@ class TokoControllerApi extends Controller
 
         // Data yang akan ditampilkan di dashboard
         $produkCount =  Produk::where('id_toko', $idtoko)->count();
-        $transaksiCount = Transaksi::where('id_toko', $idtoko)->count();
         $today = now()->toDateString(); // Format YYYY-MM-DD
+        $transaksiCount = Transaksi::where('id_toko', $idtoko)->whereDate('created_at',  $today)
+        ->count();
         $totalPendapatanHarian = Transaksi::where('id_toko', $idtoko)
             ->whereDate('created_at', $today)
             ->sum('totalharga');

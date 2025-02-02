@@ -34,8 +34,5 @@ class User extends Authenticatable
     {
         return $this->hasOne(Pekerja::class, 'id_user');
     }
-    public function toko()
-    {
-        return $this->hasOneThrough(Toko::class, Pemilik::class, 'id_user', 'id_pemilik', 'id_user', 'id_user');
-    }
+   
 }
