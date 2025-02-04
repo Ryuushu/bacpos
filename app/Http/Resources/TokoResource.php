@@ -18,7 +18,7 @@ class TokoResource extends JsonResource
                 'id_pemilik' => $this->pemilik->id_pemilik,
                 'nama_pemilik' => $this->pemilik->nama_pemilik,
             ],
-            'url_img' => $this->url_img ? asset('storage/' . $this->url_img) : null,
+            'url_img' =>$this->url_img ? asset($this->url_img) : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

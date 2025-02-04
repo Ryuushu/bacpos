@@ -29,7 +29,7 @@ class ProdukControllerApi extends Controller
             'kode_kategori' => 'required|exists:kategori,kode_kategori',
             'nama_produk' => 'required|string|max:255',
             'harga' => 'required|integer|min:0',
-            'stok' =>  $request->input('stok') != "null" ? 'integer|min:0' : '',
+            // 'stok' =>  $request->input('stok') != "null" ? 'integer|min:0' : '',
             'is_stock_managed' => 'int',
             'url_img' => 'sometimes|image|mimes:jpg,jpeg,png|max:2048', // Validate image upload
         ]);
@@ -45,26 +45,27 @@ class ProdukControllerApi extends Controller
             }
 
             // Create the product
-            if ($validated['stok'] == "null") {
-                unset($validated['stok']);
-            }
+            // if ($validated['stok'] == "null") {
+            // }
+            unset($validated['stok']);
+
             $validated['url_img'] = $imagePath; // Store the image URL in the database
             $produk = Produk::create($validated);
 
-            if ($request->input('is_stock_managed') == 1) {
-                // Create or update the stock card entry
-                KartuStok::create([
-                    'id_toko' => $produk->id_toko,
-                    'kode_produk' => $produk->kode_produk,
-                    'tanggal' => now(),
-                    'jenis_transaksi' => 'masuk',
-                    'jumlah' => $produk->stok,
-                    'stok_awal' => 0,
-                    'stok_akhir' => $produk->stok,
-                    'keterangan' => 'Stok Masuk',
-                    'created_at' => now(),
-                ]);
-            }
+            // if ($request->input('is_stock_managed') == 1) {
+            //     // Create or update the stock card entry
+            //     KartuStok::create([
+            //         'id_toko' => $produk->id_toko,
+            //         'kode_produk' => $produk->kode_produk,
+            //         'tanggal' => now(),
+            //         'jenis_transaksi' => 'masuk',
+            //         'jumlah' => $produk->stok,
+            //         'stok_awal' => 0,
+            //         'stok_akhir' => $produk->stok,
+            //         'keterangan' => 'Stok Masuk',
+            //         'created_at' => now(),
+            //     ]);
+            // }
 
             return response()->json([
                 'status' => 'success',
@@ -135,13 +136,14 @@ class ProdukControllerApi extends Controller
                 'kode_kategori' => 'sometimes|exists:kategori,kode_kategori',
                 'nama_produk' => 'sometimes|string|max:255',
                 'harga' => 'sometimes|integer|min:0',
-               'stok' =>  $request->input('stok') != "null"? 'sometimes|integer|min:0' : 'sometimes',
+            //    'stok' =>  $request->input('stok') != "null"? 'sometimes|integer|min:0' : 'sometimes',
                 'url_img' => 'sometimes|image|mimes:jpg,jpeg,png,gif|max:2048', // Validate image upload
             ]);
            
-            if ($validated['stok'] == "null") {
-                unset($validated['stok']);
-            }
+            // if ($validated['stok'] == "null") {
+               
+            // }
+            unset($validated['stok']);
             // Handle image upload (update)
            if ($request->hasFile('url_img')) {
                 $file = $request->file('url_img'); 

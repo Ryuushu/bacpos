@@ -9,9 +9,9 @@ use App\Http\Controllers\Api\DashboardControllerApi;
 use App\Http\Controllers\Api\KartuStokControllerApi;
 use App\Http\Controllers\Api\StokControllerApi;
 use App\Http\Controllers\Api\TransaksiControllerApi;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\TransaksiPembelianControllerApi;
 use Illuminate\Support\Facades\Route;
-use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
+
 
 Route::post('register', [AuthControllerApi::class, 'register']);
 Route::post('login', [AuthControllerApi::class, 'login']);
@@ -32,15 +32,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/svopname', [StokControllerApi::class, 'addstokopname']);
     Route::post('/produk/{id}',[ProdukControllerApi::class, 'update']);
     Route::post('/toko/{id}',[TokoControllerApi::class, 'update']);
-  
-    // Route::apiResource('users', UserControllerApi::class)    ;
-    // Route::apiResource('pemilik', PemilikControllerApi::class);
     Route::apiResource('toko', TokoControllerApi::class);
     Route::apiResource('pekerja', PekerjaControllerApi::class);
     Route::apiResource('kategori', KategoriControllerApi::class);
     Route::apiResource('produk', ProdukControllerApi::class);
     Route::apiResource('transaksi', TransaksiControllerApi::class);
-
+    Route::apiResource('transaksipembelian', TransaksiPembelianControllerApi::class);
     // Route::apiResource('transaksi', TransaksiControllerApi::class);
     // Route::apiResource('stok-opname', StokOpnameControllerApi::class);
     // Route::apiResource('kartu-stok', KartuStokControllerApi::class);

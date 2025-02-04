@@ -152,7 +152,7 @@ class PekerjaControllerApi extends Controller
     {
         try {
             $pekerja = Pekerja::find($id);
-
+            $user = User::find($pekerja->id_user);
             if (!$pekerja) {
                 return response()->json([
                     'status' => 'error',
@@ -162,7 +162,7 @@ class PekerjaControllerApi extends Controller
             }
 
             $pekerja->delete();
-
+            $user->delete();
             return response()->json([
                 'status' => 'success',
                 'message' => 'Pekerja deleted successfully.'

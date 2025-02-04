@@ -4,12 +4,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Transaksi extends Model
+class TransaksiPembelian extends Model
 {
     use HasFactory;
 
-    protected $table = 'transaksi_penjualan';
-    protected $primaryKey = 'id_transaksi';
+    protected $table = 'transaksi_pembelian';
+    protected $primaryKey = 'id_transaksi_pembelian';
     public $timestamps = true;
     public $incrementing = false;
 
@@ -19,9 +19,6 @@ class Transaksi extends Model
         'id_toko',
         'id_user',
         'totalharga',
-        'pembayaran',
-        'kembalian',
-        'jenis_pembayaran'
     ];
 
     public function toko()

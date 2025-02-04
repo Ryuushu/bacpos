@@ -4,16 +4,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class DetailTransaksi extends Model
+class DetailTransaksiPembelian extends Model
 {
     use HasFactory;
 
-    protected $table = 'detail_transaksi_penjualan';
+    protected $table = 'detail_transaksi_pembelian';
     protected $primaryKey = 'id';
     public $timestamps = false;
 
     protected $fillable = [
-        'id_transaksi',
+        'id_transaksi_pembelian',
         'kode_produk',
         'harga',
         'qty',
