@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('stok_opname', function (Blueprint $table) {
             $table->id('id_opname');
-            $table->foreignId('id_toko')->constrained('toko','id_toko')->cascadeOnDelete();
+            $table->foreignId('id_toko')->constrained('toko','id_toko')->restrictOnDelete();
             $table->dateTime('tanggal_opname');
             $table->text('keterangan')->nullable();
             $table->timestamps();

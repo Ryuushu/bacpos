@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('kartu_stok', function (Blueprint $table) {
             $table->id('id_kartu');
-            $table->foreignId('kode_produk')->constrained('produk','kode_produk')->cascadeOnDelete();
+            $table->foreignId('kode_produk')->constrained('produk','kode_produk')->restrictOnDelete();
             $table->dateTime('tanggal');
             $table->enum('jenis_transaksi', ['masuk', 'keluar', 'penyesuaian']);
             $table->integer('jumlah');

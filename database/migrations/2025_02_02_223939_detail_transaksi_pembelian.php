@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('detail_transaksi_pembelian', function (Blueprint $table) {
             $table->id();
             $table->string('id_transaksi_pembelian', 25);
-            $table->foreign('id_transaksi_pembelian')->references('id_transaksi_pembelian')->on('transaksi_pembelian')->cascadeOnDelete()->cascadeOnUpdate();
-            $table->foreignId('kode_produk')->references("kode_produk")->on("produk")->cascadeOnDelete()->cascadeOnUpdate();
+            $table->foreign('id_transaksi_pembelian')->references('id_transaksi_pembelian')->on('transaksi_pembelian')->restrictOnDelete()->cascadeOnUpdate();
+            $table->foreignId('kode_produk')->references("kode_produk")->on("produk")->restrictOnDelete()->cascadeOnUpdate();
             $table->integer('harga');
             $table->integer('qty');
             $table->integer('subtotal');

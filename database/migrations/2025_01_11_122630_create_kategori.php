@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('nama_kategori', 30);
             $table->boolean("is_stok");
             $table->unsignedBigInteger('id_toko');
-            $table->foreign('id_toko')->references('id_toko')->on('toko')->onDelete('cascade');
+            $table->foreign('id_toko')->references('id_toko')->on('toko')->restrictOnDelete();
             $table->timestamps();
             
         });

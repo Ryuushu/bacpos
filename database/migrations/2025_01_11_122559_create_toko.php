@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('toko', function (Blueprint $table) {
             $table->id('id_toko');
-            $table->foreignId('id_pemilik')->references("id_pemilik")->on("pemilik")->cascadeOnDelete()->cascadeOnUpdate();
+            $table->foreignId('id_pemilik')->references("id_pemilik")->on("pemilik")->restrictOnDelete()->cascadeOnUpdate();
             $table->string('nama_toko', 100);
             $table->string('alamat_toko', 100);
             $table->string('whatsapp', 15)->nullable();

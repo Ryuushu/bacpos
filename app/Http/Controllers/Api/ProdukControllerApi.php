@@ -121,6 +121,7 @@ class ProdukControllerApi extends Controller
                 'kode_kategori' => 'sometimes|exists:kategori,kode_kategori',
                 'nama_produk' => 'sometimes|string|max:255',
                 'harga' => 'sometimes|integer|min:0',
+                'is_stock_managed' => 'int',
             //    'stok' =>  $request->input('stok') != "null"? 'sometimes|integer|min:0' : 'sometimes',
                 'url_img' => 'sometimes|image|mimes:jpg,jpeg,png,gif|max:2048', // Validate image upload
             ]);
@@ -128,7 +129,7 @@ class ProdukControllerApi extends Controller
             // if ($validated['stok'] == "null") {
                
             // }
-            unset($validated['stok']);
+            // unset($validated['stok']);
             // Handle image upload (update)
            if ($request->hasFile('url_img')) {
                 $file = $request->file('url_img'); 

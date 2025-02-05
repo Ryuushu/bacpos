@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('transaksi_pembelian', function (Blueprint $table) {
             $table->string('id_transaksi_pembelian', 25)->primary();
-            $table->foreignId('id_toko')->constrained('toko', 'id_toko')->cascadeOnDelete();
-            $table->foreignId('id_user')->constrained('users', 'id_user')->cascadeOnDelete();
+            $table->foreignId('id_toko')->constrained('toko', 'id_toko')->restrictOnDelete();
+            $table->foreignId('id_user')->constrained('users', 'id_user')->restrictOnDelete();
             $table->integer('totalharga');
             $table->timestamps();
         });

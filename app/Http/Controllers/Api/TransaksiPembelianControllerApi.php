@@ -77,6 +77,7 @@ class TransaksiPembelianControllerApi extends Controller
                         'id_toko' =>  $validated['id_toko'],
                         'harga' => $item['harga'],
                         'stok' => $item['stok'],
+                        'is' => 0,
                         'kode_kategori' => $item['id_kategori'],
                         'url_img' => $imagePath
                     ]);
