@@ -63,6 +63,33 @@ class StokControllerApi extends Controller
         // Return the data as a JSON response
         return response()->json($products);
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     public function addstokopname(Request $request)
     {
         try {

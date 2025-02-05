@@ -3,14 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\DetailTransaksi;
 use App\Models\KartuStok;
-use App\Models\Produk;
-use Illuminate\Http\Request;
-use App\Models\Transaksi;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 
 class KartuStokControllerApi extends Controller
 {

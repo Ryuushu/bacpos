@@ -121,7 +121,7 @@ class TransaksiControllerApi extends Controller
                 'posisi' => $user->pekerja ? "pekerja" : 'Pemilik',
             ];
             if ($toko->url_img) {
-                $path = storage_path('app/public/' . $toko->url_img);
+                $path = public_path( $toko->url_img);
 
                 if (file_exists($path)) {
                     $imageData = base64_encode(file_get_contents($path));
@@ -204,7 +204,7 @@ class TransaksiControllerApi extends Controller
         // Menambahkan total per grup
         $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
             $total = $group->sum(function ($item) {
-                return $item->detailTransaksi->sum('harga'); // Asumsikan `harga` adalah total per detail transaksi
+                return $item->sum('totalharga'); // Asumsikan `harga` adalah total per detail transaksi
             });
             return [
                 'total' => $total,

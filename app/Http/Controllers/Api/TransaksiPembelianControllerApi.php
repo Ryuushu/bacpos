@@ -33,7 +33,7 @@ class TransaksiPembelianControllerApi extends Controller
             'items.*.harga' => 'integer',
             'items.*.stok' => 'required|integer|min:1',
             'items.*.tipe' => 'required|string',
-            'items.*.file' => 'nullable|image',
+            'items.*.file' => 'sometimes|image|mimes:jpg,jpeg,png,gif|max:2048',
         ]);
         // if ($validated->fails()) {
         //     return response()->json([
@@ -64,20 +64,20 @@ class TransaksiPembelianControllerApi extends Controller
             // Loop setiap item untuk menghitung harga dan menyimpan detail transaksi
             foreach ($validated['items'] as $item) {
                 if ($item['tipe'] === 'manual') {
-                    if (isset($item['file']) && $item['file']) {
-                        // Handle the uploaded file
-                        $file = $item['file']; // Assuming the 'url_img' field is part of the item
+                    if ($request->hasFile('url_img')) {
+                        $file = $request->file('url_img');
                         $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
-                        $imagePath = $file->storeAs('uploadfile/produk', $fileName, 'public'); // Store it in the public directory
+                        $imagePath = $file->move("uploadfile/produk/", $fileName);
                     } else {
                         $imagePath = null; // No image uploaded
                     }
+
                     $produk = Produk::create([
                         'nama_produk' => $item['nama_produk'],
                         'id_toko' =>  $validated['id_toko'],
                         'harga' => $item['harga'],
                         'stok' => $item['stok'],
-                        'is' => 0,
+                        'is_stock_managed' => 1,
                         'kode_kategori' => $item['id_kategori'],
                         'url_img' => $imagePath
                     ]);
@@ -177,10 +177,8 @@ class TransaksiPembelianControllerApi extends Controller
         });
 
         // Menambahkan total per grup
-        $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
-            $total = $group->sum(function ($item) {
-                return $item->detailTransaksiPembelian->sum('harga'); // Asumsikan `harga` adalah total per detail transaksi
-            });
+        $transaksiWithSum = $transaksiGrouped->map(function ($group) {
+            $total = $group->sum('totalharga'); // Menggunakan totalharga langsung dari transaksi
             return [
                 'total' => $total,
                 'data' => $group,

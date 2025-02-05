@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Toko;
 use Illuminate\Http\Request;
 use App\Http\Resources\TokoResource;
+use App\Models\DetailTransaksi;
 use App\Models\Produk;
 use App\Models\Transaksi;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TokoControllerApi extends Controller
@@ -67,7 +69,7 @@ class TokoControllerApi extends Controller
             } else {
                 $urlImg = null; // No image uploaded
             }
-           
+
             $toko = Toko::create([
                 'id_pemilik' => $pemilik->id_pemilik,  // Assign the pemilik's id
                 'nama_toko' => $request->nama_toko,
@@ -150,8 +152,8 @@ class TokoControllerApi extends Controller
 
             $urlImg = $toko->url_img; // Keep the existing image if no new one is uploaded
             if ($request->hasFile('url_img')) {
-                $file = $request->file('url_img'); 
-            
+                $file = $request->file('url_img');
+
                 $oldPath = public_path($toko->url_img);
                 if ($toko->url_img && file_exists($oldPath)) { // Perbaiki kurung tutup
                     unlink($oldPath);
@@ -208,9 +210,9 @@ class TokoControllerApi extends Controller
             ], 404);
         }
         $oldPath = public_path($toko->url_img);
-            if (is_file($oldPath) && file_exists($oldPath)) { // Perbaiki kurung tutup
-                unlink($oldPath);
-            }
+        if (is_file($oldPath) && file_exists($oldPath)) { // Perbaiki kurung tutup
+            unlink($oldPath);
+        }
         $toko->delete();
 
         return response()->json([
@@ -220,15 +222,30 @@ class TokoControllerApi extends Controller
     }
     public function dashboardtoko($idtoko)
     {
-
         // Data yang akan ditampilkan di dashboard
-        $produkCount =  Produk::where('id_toko', $idtoko)->count();
+        $produkCount = Produk::where('id_toko', $idtoko)->count();
         $today = now()->toDateString(); // Format YYYY-MM-DD
-        $transaksiCount = Transaksi::where('id_toko', $idtoko)->whereDate('created_at',  $today)
-        ->count();
+        $currentMonth = now()->format('Y-m'); // Format YYYY-MM untuk bulan ini
+
+        $transaksiCount = Transaksi::where('id_toko', $idtoko)
+            ->whereDate('created_at', $today)
+            ->count();
+
         $totalPendapatanHarian = Transaksi::where('id_toko', $idtoko)
             ->whereDate('created_at', $today)
             ->sum('totalharga');
+
+        $totalPendapatanBulanan = Transaksi::where('id_toko', $idtoko)
+            ->where('created_at', 'like', "$currentMonth%")
+            ->sum('totalharga');
+
+        $topProdukBulanan = DetailTransaksi::where('id_toko', $idtoko)
+            ->where('created_at', 'like', "$currentMonth%")
+            ->select('produk_id', DB::raw('SUM(jumlah) as total_terjual'))
+            ->groupBy('produk_id')
+            ->orderByDesc('total_terjual')
+            ->limit(5)
+            ->get();
 
         if ($produkCount === 0) {
             $produkCount = 0; // Jika tidak ada produk, set menjadi 0
@@ -239,13 +256,19 @@ class TokoControllerApi extends Controller
         if ($totalPendapatanHarian === null) {
             $totalPendapatanHarian = 0; // Jika tidak ada pendapatan, set menjadi 0
         }
+        if ($totalPendapatanBulanan === null) {
+            $totalPendapatanBulanan = 0; // Jika tidak ada pendapatan, set menjadi 0
+        }
+
         return response()->json([
             'status' => 'success',
             'message' => 'Data successful',
             'data' => [
                 'produk_count' => $produkCount,
                 'transaksi_count' => $transaksiCount,
-                'total_pendapatan' => $totalPendapatanHarian,
+                'total_pendapatan_harian' => $totalPendapatanHarian,
+                'total_pendapatan_bulanan' => $totalPendapatanBulanan,
+                'top_produk_bulanan' => $topProdukBulanan,
             ]
         ]);
     }
