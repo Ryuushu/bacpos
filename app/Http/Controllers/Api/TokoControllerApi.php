@@ -241,8 +241,8 @@ class TokoControllerApi extends Controller
 
         $topProdukBulanan = DetailTransaksi::where('id_toko', $idtoko)
             ->where('created_at', 'like', "$currentMonth%")
-            ->select('produk_id', DB::raw('SUM(jumlah) as total_terjual'))
-            ->groupBy('produk_id')
+            ->select('kode_produk', DB::raw('SUM(jumlah) as total_terjual'))
+            ->groupBy('kode_produk')
             ->orderByDesc('total_terjual')
             ->limit(5)
             ->get();
