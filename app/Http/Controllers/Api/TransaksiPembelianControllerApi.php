@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\DetailTransaksi;
+use App\Models\DetailTransaksiPembelian;
 use App\Models\KartuStok;
 use App\Models\Produk;
 use App\Models\Toko;
 use Illuminate\Http\Request;
 use App\Models\Transaksi;
+use App\Models\TransaksiPembelian;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -26,11 +28,20 @@ class TransaksiPembelianControllerApi extends Controller
             'id_user' => 'required|integer|exists:users,id_user',
             'items' => 'required|array',
             'items.*.kode_produk' => 'required|integer',
-            'items.*.qty' => 'required|integer|min:1',
+            'items.*.id_kategori' => '',
+            'items.*.nama_produk' => '',
+            'items.*.harga' => 'integer',
+            'items.*.stok' => 'required|integer|min:1',
             'items.*.tipe' => 'required|string',
             'items.*.file' => 'nullable|image',
         ]);
-        
+        // if ($validated->fails()) {
+        //     return response()->json([
+        //         'status' => 'error',
+        //         'message' => 'Validation errors',
+        //         'errors' => $validated->errors()
+        //     ], 422);
+        // }
         // Generate ID transaksi
         $idTransaksi = 'TRXB-' . $validated['id_toko'] . now()->format('dmYHis') . rand(1000, 9999);
 
@@ -39,8 +50,8 @@ class TransaksiPembelianControllerApi extends Controller
 
         try {
             // Simpan data transaksi
-            $transaksi = Transaksi::create([
-                'id_transaksi' => $idTransaksi,
+            $transaksi = TransaksiPembelian::create([
+                'id_transaksi_pembelian' => $idTransaksi,
                 'id_toko' => $validated['id_toko'],
                 'id_user' => $validated['id_user'],
                 'totalharga' => 0,
@@ -63,62 +74,53 @@ class TransaksiPembelianControllerApi extends Controller
                     }
                     $produk = Produk::create([
                         'nama_produk' => $item['nama_produk'],
+                        'id_toko' =>  $validated['id_toko'],
                         'harga' => $item['harga'],
-                        'stok' => $item['qty'],
-                        'kategori' => $item['kategori'],
-                        'url_img' =>$imagePath
+                        'stok' => $item['stok'],
+                        'kode_kategori' => $item['id_kategori'],
+                        'url_img' => $imagePath
+                    ]);
+                    $stokAwal = $produk->stok;
+                    $stokAkhir = $produk->stok + $item['stok'];
+
+                    // Menambahkan ke tabel kartustok
+                    KartuStok::create([
+                        'kode_produk' => $produk->kode_produk,
+                        'jenis_transaksi' => 'masuk', // Karena ini pengurangan stok
+                        'tanggal' => now()->format('Y-m-d H:i:s'),
+                        'jumlah' => $item['stok'],
+                        'stok_awal' => $stokAwal,
+                        'stok_akhir' => $stokAkhir,
+                        'keterangan' => 'Transaksi penjualan, ID Transaksi: ' . $idTransaksi,
                     ]);
                 } else {
                     // Find the product if tipe is 'existing'
                     $produk = Produk::findOrFail($item['kode_produk']);
                     $stokAwal = $produk->stok;
-                    $stokAkhir = $produk->stok + $item['qty'];
+                    $stokAkhir = $produk->stok + $item['stok'];
                     $produk->stok = $stokAkhir;
                     $produk->save();
+                    // Menambahkan ke tabel kartustok
+                    KartuStok::create([
+                        'kode_produk' => $produk->kode_produk,
+                        'jenis_transaksi' => 'masuk', // Karena ini pengurangan stok
+                        'tanggal' => now()->format('Y-m-d H:i:s'),
+                        'jumlah' => $item['stok'],
+                        'stok_awal' => $stokAwal,
+                        'stok_akhir' => $stokAkhir,
+                        'keterangan' => 'Transaksi penjualan, ID Transaksi: ' . $idTransaksi,
+                    ]);
                 }
                 $harga = $produk->harga;
-                $subtotal = $harga * $item['qty'];
-
-                // Validasi ketersediaan stok produk jika is_stok_management true
-                // if ($produk->is_stock_managed && $produk->stok < $item['qty']) {
-                //     // Rollback transaksi jika stok tidak cukup
-                //     DB::rollBack();
-                //     return response()->json([
-                //         'message' => 'Stok produk ' . $produk->nama_produk . ' tidak cukup',
-                //     ], 400);
-                // }
-
-                // Simpan detail transaksi
-                DetailTransaksi::create([
-                    'id_transaksi' => $idTransaksi,
+                $subtotal = $harga * $item['stok'];
+                DetailTransaksiPembelian::create([
+                    'id_transaksi_pembelian' => $idTransaksi,
                     'kode_produk' =>  $produk->kode_produk,
                     'harga' => $harga,
-                    'qty' => $item['qty'],
+                    'qty' => $item['stok'],
                     'subtotal' => $subtotal,
                 ]);
-
-                // Tambahkan subtotal ke total harga
                 $totalHarga += $subtotal;
-                // $itemsDetails[] = [
-                //     'kode_produk' => $item['kode_produk'],
-                //     'nama_produk' => $produk->nama_produk,
-                //     'qty' => $item['qty'],
-                //     'harga' => $harga,
-                //     'subtotal' => $subtotal,
-                // ];
-                $stokAwal = $produk->stok;
-                $stokAkhir = $produk->stok + $item['qty'];
-
-                // Menambahkan ke tabel kartustok
-                KartuStok::create([
-                    'kode_produk' => $item['kode_produk'],
-                    'jenis_transaksi' => 'masuk', // Karena ini pengurangan stok
-                    'tanggal' => now()->format('Y-m-d H:i:s'),
-                    'jumlah' => $item['qty'],
-                    'stok_awal' => $stokAwal,
-                    'stok_akhir' => $stokAkhir,
-                    'keterangan' => 'Transaksi penjualan, ID Transaksi: ' . $idTransaksi,
-                ]);
             }
 
             $transaksi->update([
@@ -156,7 +158,7 @@ class TransaksiPembelianControllerApi extends Controller
 
 
         // Query transaksi dengan filter tanggal jika diberikan
-        $transaksiQuery = Transaksi::with('toko', 'user.pekerja', 'user.pemilik', 'detailTransaksi.produk')
+        $transaksiQuery = TransaksiPembelian::with('toko', 'user.pemilik', 'detailTransaksiPembelian.produk')
             ->where('id_toko', $id_toko);
 
         if ($startDate && $endDate) {
@@ -168,12 +170,7 @@ class TransaksiPembelianControllerApi extends Controller
 
         $transaksi = $transaksiQuery->get();
 
-        // Jika tidak ada transaksi untuk toko tersebut
-        // if ($transaksi->isEmpty()) {
-        //     return response()->json(['message' => 'Tidak ada transaksi ditemukan untuk toko ini.'], 404);
-        // }
 
-        // Mengelompokkan transaksi berdasarkan tanggal
         $transaksiGrouped = $transaksi->groupBy(function ($item) {
             return Carbon::parse($item->created_at)->format('Y-m-d'); // Group berdasarkan tanggal
         });
@@ -181,7 +178,7 @@ class TransaksiPembelianControllerApi extends Controller
         // Menambahkan total per grup
         $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
             $total = $group->sum(function ($item) {
-                return $item->detailTransaksi->sum('harga'); // Asumsikan `harga` adalah total per detail transaksi
+                return $item->detailTransaksiPembelian->sum('harga'); // Asumsikan `harga` adalah total per detail transaksi
             });
             return [
                 'total' => $total,

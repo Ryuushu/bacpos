@@ -27,7 +27,7 @@ class TransaksiControllerApi extends Controller
             'items.*.kode_produk' => 'required|integer|exists:produk,kode_produk',
             'items.*.qty' => 'required|integer|min:1',
             'bayar' => 'required|integer|min:1',
-            'jenis_pembayaran' => 'required|integer|min:1',
+            'jenis_pembayaran' => 'required',
 
         ]);
 

@@ -22,7 +22,7 @@ class DetailTransaksiPembelian extends Model
 
     public function transaksi()
     {
-        return $this->belongsTo(Transaksi::class, 'id_transaksi');
+        return $this->belongsTo(TransaksiPembelian::class, 'id_transaksi_pembelian');
     }
 
     public function produk()

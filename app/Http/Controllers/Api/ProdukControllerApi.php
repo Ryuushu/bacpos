@@ -52,21 +52,6 @@ class ProdukControllerApi extends Controller
             $validated['url_img'] = $imagePath; // Store the image URL in the database
             $produk = Produk::create($validated);
 
-            // if ($request->input('is_stock_managed') == 1) {
-            //     // Create or update the stock card entry
-            //     KartuStok::create([
-            //         'id_toko' => $produk->id_toko,
-            //         'kode_produk' => $produk->kode_produk,
-            //         'tanggal' => now(),
-            //         'jenis_transaksi' => 'masuk',
-            //         'jumlah' => $produk->stok,
-            //         'stok_awal' => 0,
-            //         'stok_akhir' => $produk->stok,
-            //         'keterangan' => 'Stok Masuk',
-            //         'created_at' => now(),
-            //     ]);
-            // }
-
             return response()->json([
                 'status' => 'success',
                 'message' => $imagePath,

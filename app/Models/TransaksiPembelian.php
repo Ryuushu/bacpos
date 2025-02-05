@@ -15,7 +15,7 @@ class TransaksiPembelian extends Model
 
 
     protected $fillable = [
-        'id_transaksi',
+        'id_transaksi_pembelian',
         'id_toko',
         'id_user',
         'totalharga',
@@ -31,8 +31,8 @@ class TransaksiPembelian extends Model
         return $this->belongsTo(User::class, 'id_user');
     }
 
-    public function detailTransaksi()
+    public function detailTransaksiPembelian()
     {
-        return $this->hasMany(DetailTransaksi::class, 'id_transaksi');
+        return $this->hasMany(DetailTransaksiPembelian::class, 'id_transaksi_pembelian');
     }
 }
