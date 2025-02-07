@@ -222,6 +222,7 @@ class TokoControllerApi extends Controller
     }
     public function dashboardtoko($idtoko)
     {
+        $toko = Toko::where('id_toko', $idtoko)->first();
         // Data yang akan ditampilkan di dashboard
         $produkCount = Produk::where('id_toko', $idtoko)->count();
         $today = now()->toDateString(); // Format YYYY-MM-DD
@@ -239,13 +240,10 @@ class TokoControllerApi extends Controller
             ->where('created_at', 'like', "$currentMonth%")
             ->sum('totalharga');
 
-        $topProdukBulanan = DetailTransaksi::where('id_toko', $idtoko)
-            ->where('created_at', 'like', "$currentMonth%")
-            ->select('kode_produk', DB::raw('SUM(qty) as total_terjual'))
-            ->groupBy('kode_produk')
-            ->orderByDesc('total_terjual')
-            ->limit(5)
-            ->get();
+        $topProdukBulanan = Produk::where('id_toko', $idtoko)
+        ->withSum('detailTransaksi as total_qty', 'qty')
+        ->limit(5)
+        ->get(['kode_produk', 'nama_produk', 'id_toko']);
 
         if ($produkCount === 0) {
             $produkCount = 0; // Jika tidak ada produk, set menjadi 0
@@ -264,6 +262,7 @@ class TokoControllerApi extends Controller
             'status' => 'success',
             'message' => 'Data successful',
             'data' => [
+                'toko'=>$toko,
                 'produk_count' => $produkCount,
                 'transaksi_count' => $transaksiCount,
                 'total_pendapatan_harian' => $totalPendapatanHarian,

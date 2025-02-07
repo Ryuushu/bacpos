@@ -33,7 +33,7 @@ class TransaksiPembelianControllerApi extends Controller
             'items.*.harga' => 'integer',
             'items.*.stok' => 'required|integer|min:1',
             'items.*.tipe' => 'required|string',
-            'items.*.file' => 'sometimes|image|mimes:jpg,jpeg,png,gif|max:2048',
+            'items.*.file' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
         ]);
         // if ($validated->fails()) {
         //     return response()->json([
@@ -177,8 +177,8 @@ class TransaksiPembelianControllerApi extends Controller
         });
 
         // Menambahkan total per grup
-        $transaksiWithSum = $transaksiGrouped->map(function ($group) {
-            $total = $group->sum('totalharga'); // Menggunakan totalharga langsung dari transaksi
+        $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
+            $total = $group->sum('totalharga'); 
             return [
                 'total' => $total,
                 'data' => $group,

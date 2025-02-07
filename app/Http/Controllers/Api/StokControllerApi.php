@@ -97,6 +97,7 @@ class StokControllerApi extends Controller
 
             $validated = $request->validate([
                 'id_toko' => 'required|integer|exists:toko,id_toko',
+                'keterangan' => 'nullable',
                 'stok_opname' => 'required|array',
                 'stok_opname.*.kode_produk' => 'required|integer|exists:produk,kode_produk',
                 'stok_opname.*.stok_fisik' => 'required|integer|min:0',
@@ -109,7 +110,7 @@ class StokControllerApi extends Controller
                 'id_opname' => $idOpname,
                 'id_toko' => $validated['id_toko'],
                 'tanggal_opname' => now(),
-                'keterangan' => '',
+                'keterangan' => $validated['keterangan'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -122,15 +123,9 @@ class StokControllerApi extends Controller
                     throw new \Exception("Produk dengan kode {$stok['kode_produk']} tidak ditemukan.");
                 }
 
-                // Hitung selisih
                 $stokSistem = $produk->stok;
                 $stokFisik = $stok['stok_fisik'];
                 $selisih = $stokFisik - $stokSistem;
-
-                // Perbarui stok produk
-
-
-                // Simpan detail opname
                 DetailOpname::create([
                     'id_opname' => $stokOpname->id_opname,
                     'kode_produk' => $stok['kode_produk'],

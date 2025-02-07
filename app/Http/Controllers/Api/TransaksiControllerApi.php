@@ -200,12 +200,13 @@ class TransaksiControllerApi extends Controller
         $transaksiGrouped = $transaksi->groupBy(function ($item) {
             return Carbon::parse($item->created_at)->format('Y-m-d'); // Group berdasarkan tanggal
         });
-
+        $totalPerHari = $transaksiGrouped->map(function ($transaksiPerHari) {
+            return ;
+        });
+   
         // Menambahkan total per grup
         $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
-            $total = $group->sum(function ($item) {
-                return $item->sum('totalharga'); // Asumsikan `harga` adalah total per detail transaksi
-            });
+            $total = $group->sum('totalharga');
             return [
                 'total' => $total,
                 'data' => $group,

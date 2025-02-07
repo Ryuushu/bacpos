@@ -13,7 +13,7 @@ class KartuStokControllerApi extends Controller
 
         // Add condition based on type
         if ($type !== 'all') {
-            $query->where('jenis_transaksi', $type); // Assuming the 'type' column exists in the KartuStok model
+            $query->where('jenis_transaksi', $type);
         }
 
         $data = $query->orderBy('tanggal','DESC')->get();
