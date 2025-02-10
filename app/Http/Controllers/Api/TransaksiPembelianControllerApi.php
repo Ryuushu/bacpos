@@ -120,6 +120,7 @@ class TransaksiPembelianControllerApi extends Controller
                     'harga' => $harga,
                     'qty' => $item['stok'],
                     'subtotal' => $subtotal,
+                    'created_at' => now()->format('Y-m-d H:i:s'),
                 ]);
                 $totalHarga += $subtotal;
             }

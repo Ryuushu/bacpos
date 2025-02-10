@@ -10,7 +10,7 @@ class DetailTransaksi extends Model
 
     protected $table = 'detail_transaksi_penjualan';
     protected $primaryKey = 'id';
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'id_transaksi',

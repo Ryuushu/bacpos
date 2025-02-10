@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Str;
 
 class AuthControllerApi extends Controller
@@ -40,21 +41,21 @@ class AuthControllerApi extends Controller
                 'password' => Hash::make($request->password),
                 'role' => 'pemilik',
             ]);
-            $pemilik = Pemilik::create([
-                'nama_pemilik' => $request->nama_pemilik,
-                'id_user' => $user->id_user
-            ]);
+                $pemilik = Pemilik::create([
+                    'nama_pemilik' => $request->nama_pemilik,
+                    'id_user' => $user->id_user
+                ]);
 
-            $otp = rand(100000, 999999);
-            // Menghasilkan OTP acak 6 digit
-            Otp::create([
-                'id_user' => $user->id_user,
-                'otp' => $otp,
-                'expires_at' => Carbon::now()->addMinutes(5),  // OTP berlaku selama 5 menit
-            ]);
+            // $otp = rand(100000, 999999);
+            // // Menghasilkan OTP acak 6 digit
+            // Otp::create([
+            //     'id_user' => $user->id_user,
+            //     'otp' => $otp,
+            //     'expires_at' => Carbon::now()->addMinutes(5),  // OTP berlaku selama 5 menit
+            // ]);
 
-            // Kirim OTP ke email pengguna
-            Mail::to($request->email)->send(new OtpMail($otp));
+            // // Kirim OTP ke email pengguna
+            // Mail::to($request->email)->send(new OtpMail($otp));
             return response()->json([
                 'status' => 'success',
                 'message' => 'Registration successful',
@@ -108,8 +109,6 @@ class AuthControllerApi extends Controller
                 'pemilik' => $pemilik, // Tambahkan data pemilik
             ]
         ], 200);
-
-        return response()->json(['message' => 'Unauthorized'], 403);
     }
 
     // Logout
@@ -187,13 +186,13 @@ class AuthControllerApi extends Controller
         $user = User::where('email', $request->email)->first();
 
         // Kirim link reset password
-        $token = Str::random(60);
-        $user->password_reset_token = $token;
-        $user->password_reset_token_expiry = Carbon::now()->addMinutes(30);  // Token berlaku selama 30 menit
-        $user->save();
+        // $token = Str::random(60);
+        // $user->password_reset_token = $token;
+        // $user->password_reset_token_expiry = Carbon::now()->addMinutes(30);  // Token berlaku selama 30 menit
+        // $user->save();
 
-        // Kirim email dengan link reset password
-        Mail::to($request->email)->send(new PasswordResetMail($token));
+        // // Kirim email dengan link reset password
+        // Mail::to($request->email)->send(new PasswordResetMail($token));
 
         return response()->json([
             'status' => 'success',

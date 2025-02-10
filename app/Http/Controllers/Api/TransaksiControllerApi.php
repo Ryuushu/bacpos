@@ -28,6 +28,7 @@ class TransaksiControllerApi extends Controller
             'items.*.qty' => 'required|integer|min:1',
             'bayar' => 'required|integer|min:1',
             'jenis_pembayaran' => 'required',
+            'ppn' => 'nullable',
 
         ]);
 
@@ -47,6 +48,7 @@ class TransaksiControllerApi extends Controller
                 'pembayaran' => $validated['bayar'],
                 'kembalian' => 0,
                 'jenis_pembayaran'=>$validated['jenis_pembayaran'],
+                'ppn'=>$validated['ppn'],
                 'created_at' => now()->format('Y-m-d H:i:s'),
             ]);
 
@@ -75,6 +77,7 @@ class TransaksiControllerApi extends Controller
                     'harga' => $harga,
                     'qty' => $item['qty'],
                     'subtotal' => $subtotal,
+                    'created_at' => now()->format('Y-m-d H:i:s'),
                 ]);
 
                 // Tambahkan subtotal ke total harga

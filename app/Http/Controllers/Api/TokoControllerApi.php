@@ -262,7 +262,7 @@ class TokoControllerApi extends Controller
             'status' => 'success',
             'message' => 'Data successful',
             'data' => [
-                'toko'=>$toko,
+                'toko'=>new TokoResource($toko),
                 'produk_count' => $produkCount,
                 'transaksi_count' => $transaksiCount,
                 'total_pendapatan_harian' => $totalPendapatanHarian,

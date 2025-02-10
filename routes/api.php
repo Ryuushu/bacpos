@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\KartuStokControllerApi;
 use App\Http\Controllers\Api\StokControllerApi;
 use App\Http\Controllers\Api\TransaksiControllerApi;
 use App\Http\Controllers\Api\TransaksiPembelianControllerApi;
+use App\Http\Controllers\Api\LaporanControllerApi;
 use Illuminate\Support\Facades\Route;
 
 
@@ -18,7 +19,7 @@ Route::post('login', [AuthControllerApi::class, 'login']);
 Route::post('verify-otp', [AuthControllerApi::class, 'verifyOtp']);
 Route::post('forgot-password', [AuthControllerApi::class, 'forgotPassword']);
 Route::post('reset-password', [AuthControllerApi::class, 'resetPassword']);
-
+Route::get('laporan/export/{type}/{idtoko}', [LaporanControllerApi::class, 'exportLaporan']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthControllerApi::class, 'logout']);
     Route::get('listtokopemilik', [DashboardControllerApi::class, 'listtokobypemilik']);
@@ -33,6 +34,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/produk/{id}',[ProdukControllerApi::class, 'update']);
     Route::post('/toko/{id}',[TokoControllerApi::class, 'update']);
     Route::get('riwayattransaksipembelian/{id_toko}', [TransaksiPembelianControllerApi::class, 'riwayat']);
+   
+
     Route::apiResource('toko', TokoControllerApi::class);
     Route::apiResource('pekerja', PekerjaControllerApi::class);
     Route::apiResource('kategori', KategoriControllerApi::class);

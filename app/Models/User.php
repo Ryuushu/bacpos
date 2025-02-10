@@ -38,5 +38,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Admin::class, 'id_user');
     }
+    public function hasRole($role)
+    {
+        return $this->role === $role; // Adjust based on how roles are stored
+    }
    
 }
