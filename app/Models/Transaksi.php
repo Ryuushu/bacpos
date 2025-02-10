@@ -21,7 +21,9 @@ class Transaksi extends Model
         'totalharga',
         'pembayaran',
         'kembalian',
-        'jenis_pembayaran'
+        'jenis_pembayaran',
+        'ppn'
+
     ];
 
     public function toko()

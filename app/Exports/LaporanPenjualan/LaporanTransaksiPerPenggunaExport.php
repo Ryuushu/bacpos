@@ -1,34 +1,30 @@
 <?php
 
-namespace App\Exports;
+namespace App\Exports\LaporanPenjualan;
 
 use App\Models\DetailTransaksi;
+use App\Models\Transaksi;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Illuminate\Support\Facades\DB;
 
-class LaporanPenjualanBerdasarkanProdukExport implements FromCollection, WithHeadings
+class LaporanTransaksiPerPenggunaExport implements FromCollection, WithHeadings
 {
     protected $idtoko;
-
     public function __construct($idtoko)
     {
         $this->idtoko = $idtoko;
     }
-
-
     /**
      * @return \Illuminate\Support\Collection
      */
     public function collection()
     {
-        return DetailTransaksi::join("transaksi_penjualan", "detail_transaksi_penjualan.id_transaksi", "=", "transaksi_penjualan.id_transaksi")
-            ->join("produk", "detail_transaksi_penjualan.kode_produk", "=", "produk.kode_produk") // Join ke tabel produk untuk mendapatkan nama_produk
+        return  DetailTransaksi::join("transaksi_penjualan", "detail_transaksi_penjualan.id_transaksi", "=", "transaksi_penjualan.id_transaksi")
             ->where("transaksi_penjualan.id_toko", $this->idtoko)
-            ->selectRaw("produk.nama_produk, 
-                SUM(detail_transaksi_penjualan.subtotal) as total_harga,
+            ->selectRaw("transaksi_penjualan.id_user, 
+                SUM(detail_transaksi_penjualan.subtotal) as total_transaksi,
                 COUNT(DISTINCT transaksi_penjualan.id_transaksi) as jumlah_transaksi")
-            ->groupBy("detail_transaksi_penjualan.kode_produk", "produk.nama_produk")
+            ->groupBy("transaksi_penjualan.id_user")
             ->get();
     }
 
@@ -40,7 +36,7 @@ class LaporanPenjualanBerdasarkanProdukExport implements FromCollection, WithHea
     public function headings(): array
     {
         return [
-            'Nama Produk',
+            'Nama User',
             'Total Penjualan',
             'Total Transaksi',
         ];

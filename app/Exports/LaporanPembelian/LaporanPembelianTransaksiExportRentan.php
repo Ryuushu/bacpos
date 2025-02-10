@@ -1,15 +1,17 @@
 <?php
 
-namespace App\Exports;
+namespace App\Exports\LaporanPembelian;
 
 use App\Models\DetailTransaksi;
+use App\Models\DetailTransaksiPembelian;
 use App\Models\Transaksi;
+use App\Models\TransaksiPembelian;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithTitle;
 
-class LaporanTransaksiExportRentan implements WithMultipleSheets
+class LaporanPembelianTransaksiExportRentan implements WithMultipleSheets
 {
     protected $start_date;
     protected $end_date;
@@ -29,7 +31,7 @@ class LaporanTransaksiExportRentan implements WithMultipleSheets
         ];
     }
 }
-class TransaksiSheet implements FromCollection,WithHeadings, WithTitle
+class TransaksiSheet implements FromCollection, WithHeadings, WithTitle
 {
     protected $start_date;
     protected $end_date;
@@ -43,67 +45,48 @@ class TransaksiSheet implements FromCollection,WithHeadings, WithTitle
 
     public function collection()
     {
-        $table =  Transaksi::where('id_toko', $this->idtoko)->whereBetween('created_at', [$this->start_date, $this->end_date])->get();
+        $table = TransaksiPembelian::with('user.pekerja', 'user.pemilik')->where('id_toko', $this->idtoko)->whereBetween('created_at', [$this->start_date, $this->end_date])->get();
         $totalHarga = $table->sum(function ($data) {
             return $data->totalharga;
         });
-        $totalPembayan = $table->sum(function ($data) {
-            return $data->pembayaran;
-        });
         $data = $table->map(function ($data) {
             return [
-                'id_transaksi' => $data->id_transaksi,
+                'id_transaksi_pembelian' => $data->id_transaksi_pembelian,
                 'nama' => $data->user->pemilik != null ? $data->user->pemilik->nama_pemilik : $data->user->pekerja->nama_pekerja,
-                'created_at' => $data->created_at,
-                'ppn' => $data->ppn,
+                'created_at' => date('Y-m-d H:i:s', strtotime($data->created_at)),
                 'totalharga' => $data->totalharga,
-                'pembayaran' => $data->pembayaran,
-                'kembalian' => $data->kembalian == 0 ? '0' : $data->kembalian,
-                'jenis_pembayaran' => $data->jenis_pembayaran,
             ];
         });
         $data->push([
             'id_transaksi' => "",
             'nama' => "",
             'created_at' => "",
-            'ppn' => "",
             'totalharga' =>  "",
-            'pembayaran' => "",
-            'kembalian' => "",
-            'jenis_pembayaran' => "",
         ]);
         $data->push([
-            'id_transaksi' => "Total Pendapatan & Pembayaran",
+            'id_transaksi' => "Total",
             'nama' => "",
             'created_at' => "",
-            'ppn' => "",
             'totalharga' =>  $totalHarga,
-            'pembayaran' => $totalPembayan,
-            'kembalian' => "",
-            'jenis_pembayaran' => "",
         ]);
         return $data;
     }
     public function title(): string
     {
-        $title = "Transaksi Penjualan Rentan";
+        $title = "Transaksi Pembelian Rentan";
         return $title; // Ganti sesuai keinginan
     }
     public function headings(): array
     {
         return [
             'ID Transaksi',
-            'Nama User',
+            'Nama Kasir',
             'Waktu Transaksi',
-            'Ppn',
             'Total Harga',
-            'Pembayaran',
-            'Kembalian',
-            'Jenis Pembayaran',
         ];
     }
 }
-class DetailTransaksiSheet implements FromCollection,WithHeadings, WithTitle
+class DetailTransaksiSheet implements FromCollection, WithHeadings, WithTitle
 {
     protected $start_date;
     protected $end_date;
@@ -117,25 +100,26 @@ class DetailTransaksiSheet implements FromCollection,WithHeadings, WithTitle
 
     public function collection()
     {
-        $table = DetailTransaksi::join("transaksi_penjualan", "detail_transaksi_penjualan.id_transaksi", "transaksi_penjualan.id_transaksi")
-            ->where('id_toko', $this->idtoko)
-            ->whereBetween('detail_transaksi_penjualan.created_at', [$this->start_date, $this->end_date])
+        $table = DetailTransaksiPembelian::with('transaksi.user.pekerja', 'transaksi.user.pemilik')->join("transaksi_pembelian", "detail_transaksi_pembelian.id_transaksi_pembelian", "transaksi_pembelian.id_transaksi_pembelian")
+            ->where('transaksi_pembelian.id_toko', $this->idtoko)
+            ->whereBetween('detail_transaksi_pembelian.created_at', [$this->start_date, $this->end_date])
             ->get();
         $data = $table->map(function ($data) {
             return [
                 'id_transaksi' => $data->id_transaksi,
+                'namauser ' => $data->transaksi->user->pemilik != null ? $data->transaksi->user->pemilik->nama_pemilik : $data->transaksi->user->pekerja->nama_pekerja,
                 'namaproduk' => $data->produk->nama_produk,
                 'harga' => $data->harga,
                 'qty' => $data->qty,
                 'subtotal' => $data->subtotal,
-                'created_at' => $data->created_at,
+               'created_at' => date('Y-m-d H:i:s', strtotime($data->created_at)),
             ];
         });
         return $data;
     }
     public function title(): string
     {
-        $title = "Detail Transaksi Penjualan Rentan";
+        $title = "Detail Transaksi Pembelian Rentan";
         return $title; // Ganti sesuai keinginan
     }
     /**
@@ -147,6 +131,7 @@ class DetailTransaksiSheet implements FromCollection,WithHeadings, WithTitle
     {
         return [
             'ID Transaksi',
+            'Nama Kasir',
             'Nama Produk',
             'Harga Produk',
             'Qty',

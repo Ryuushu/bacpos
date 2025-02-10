@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Exports;
+namespace App\Exports\LaporanPembelian;
 
 use App\Models\Transaksi;
+use App\Models\TransaksiPembelian;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Carbon\Carbon;
 
-class LaporanTransaksiExportPerTahun implements FromCollection, WithHeadings
+class LaporanPembelianTransaksiExportPerTahun implements FromCollection, WithHeadings
 {
     protected $tahun;
     protected $idtoko;
@@ -21,7 +22,7 @@ class LaporanTransaksiExportPerTahun implements FromCollection, WithHeadings
      */
     public function collection()
     {
-        return Transaksi::selectRaw('MONTHNAME(created_at) as bulan, COUNT(id_transaksi) as total_transaksi, SUM(totalharga) as total_harga')
+        return TransaksiPembelian::selectRaw('MONTHNAME(created_at) as bulan, COUNT(id_transaksi_pembelian) as total_transaksi, SUM(totalharga) as total_harga')
             ->where('id_toko', $this->idtoko)
             ->whereYear('created_at', $this->tahun)
             ->groupByRaw('MONTHNAME(created_at), MONTH(created_at)')

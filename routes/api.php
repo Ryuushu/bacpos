@@ -19,7 +19,8 @@ Route::post('login', [AuthControllerApi::class, 'login']);
 Route::post('verify-otp', [AuthControllerApi::class, 'verifyOtp']);
 Route::post('forgot-password', [AuthControllerApi::class, 'forgotPassword']);
 Route::post('reset-password', [AuthControllerApi::class, 'resetPassword']);
-Route::get('laporan/export/{type}/{idtoko}', [LaporanControllerApi::class, 'exportLaporan']);
+Route::get('laporanpenjualan/export/{type}/{idtoko}', [LaporanControllerApi::class, 'exportLaporanPenjualan']);
+Route::get('laporanpembelian/export/{type}/{idtoko}', [LaporanControllerApi::class, 'exportLaporanPembelian']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthControllerApi::class, 'logout']);
     Route::get('listtokopemilik', [DashboardControllerApi::class, 'listtokobypemilik']);

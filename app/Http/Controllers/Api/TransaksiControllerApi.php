@@ -31,7 +31,6 @@ class TransaksiControllerApi extends Controller
             'ppn' => 'nullable',
 
         ]);
-
         // Generate ID transaksi
         $idTransaksi = 'TRX-' . $validated['id_toko'] . now()->format('dmYHis') . rand(1000, 9999);
 
@@ -47,11 +46,10 @@ class TransaksiControllerApi extends Controller
                 'totalharga' => 0,
                 'pembayaran' => $validated['bayar'],
                 'kembalian' => 0,
-                'jenis_pembayaran'=>$validated['jenis_pembayaran'],
-                'ppn'=>$validated['ppn'],
+                'jenis_pembayaran' => $validated['jenis_pembayaran'],
+                'ppn' => $validated['ppn'],
                 'created_at' => now()->format('Y-m-d H:i:s'),
             ]);
-
 
             $totalHarga = 0;
 
@@ -110,10 +108,17 @@ class TransaksiControllerApi extends Controller
                     ]);
                 }
             }
+
+            $ppnValue = isset($validated['ppn']) ? $validated['ppn'] : 0; // Default ke 0 jika null
+            $calculatedPpnAmount = ($ppnValue / 100) * $totalHarga;
+            $calculatedTotalAkhir = $totalHarga + $calculatedPpnAmount;
+          
             $transaksi->update([
-                'totalharga' => $totalHarga,
-                'kembalian' => $validated['bayar'] - $totalHarga,
+                'totalharga' => $calculatedTotalAkhir,
+                'kembalian' => $validated['bayar'] - $calculatedTotalAkhir,
             ]);
+
+
             $user = User::with(['pekerja', 'pemilik'])->find($validated['id_user']);
             $toko = Toko::find($validated['id_toko']);
 
@@ -124,7 +129,7 @@ class TransaksiControllerApi extends Controller
                 'posisi' => $user->pekerja ? "pekerja" : 'Pemilik',
             ];
             if ($toko->url_img) {
-                $path = public_path( $toko->url_img);
+                $path = public_path($toko->url_img);
 
                 if (file_exists($path)) {
                     $imageData = base64_encode(file_get_contents($path));
@@ -148,7 +153,7 @@ class TransaksiControllerApi extends Controller
             return response()->json([
                 'message' => 'Checkout berhasil',
                 'id_transaksi' => $idTransaksi,
-                'totalharga' => $totalHarga,
+                'totalharga' => $calculatedTotalAkhir,
                 'pembayaran' => $validated['bayar'],
                 'kembalian' => $transaksi->kembalian,
                 'create_at' => $transaksi->create_at,
@@ -204,9 +209,9 @@ class TransaksiControllerApi extends Controller
             return Carbon::parse($item->created_at)->format('Y-m-d'); // Group berdasarkan tanggal
         });
         $totalPerHari = $transaksiGrouped->map(function ($transaksiPerHari) {
-            return ;
+            return;
         });
-   
+
         // Menambahkan total per grup
         $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
             $total = $group->sum('totalharga');
