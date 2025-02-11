@@ -153,7 +153,10 @@ class TransaksiControllerApi extends Controller
             return response()->json([
                 'message' => 'Checkout berhasil',
                 'id_transaksi' => $idTransaksi,
+                'subtotal'=>$totalHarga,
+                'ppn'=>$validated["ppn"],
                 'totalharga' => $calculatedTotalAkhir,
+                
                 'pembayaran' => $validated['bayar'],
                 'kembalian' => $transaksi->kembalian,
                 'create_at' => $transaksi->create_at,

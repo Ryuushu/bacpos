@@ -240,10 +240,12 @@ class TokoControllerApi extends Controller
             ->where('created_at', 'like', "$currentMonth%")
             ->sum('totalharga');
 
-        $topProdukBulanan = Produk::where('id_toko', $idtoko)
-        ->withSum('detailTransaksi as total_qty', 'qty')
-        ->limit(5)
-        ->get(['kode_produk', 'nama_produk', 'id_toko']);
+            $topProdukBulanan = Produk::where('id_toko', $idtoko)
+            ->withSum('detailTransaksi as total_qty', 'qty')
+            ->having('total_qty', '>', 0) // Filter quantity lebih dari 0
+            ->orderByDesc('total_qty')  // Urutkan berdasarkan total_qty terbesar
+            ->limit(5)
+            ->get(['kode_produk', 'nama_produk', 'id_toko']);
 
         if ($produkCount === 0) {
             $produkCount = 0; // Jika tidak ada produk, set menjadi 0
