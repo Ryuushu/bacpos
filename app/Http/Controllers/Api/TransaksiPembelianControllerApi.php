@@ -33,7 +33,7 @@ class TransaksiPembelianControllerApi extends Controller
             'items.*.harga' => 'integer',
             'items.*.stok' => 'required|integer|min:1',
             'items.*.tipe' => 'required|string',
-            'items.*.file' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+            'items.*.file' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:5120',
         ]);
         // if ($validated->fails()) {
         //     return response()->json([

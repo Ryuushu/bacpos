@@ -156,7 +156,6 @@ class TransaksiControllerApi extends Controller
                 'subtotal'=>$totalHarga,
                 'ppn'=>$validated["ppn"],
                 'totalharga' => $calculatedTotalAkhir,
-                
                 'pembayaran' => $validated['bayar'],
                 'kembalian' => $transaksi->kembalian,
                 'create_at' => $transaksi->create_at,

@@ -7,6 +7,9 @@ use App\Http\Resources\ProdukResource;
 use App\Models\Produk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Facades\Image;
+use Intervention\Image\ImageManager;
 
 class ProdukControllerApi extends Controller
 {
@@ -15,44 +18,41 @@ class ProdukControllerApi extends Controller
      */
     public function store(Request $request)
     {
-
-        // return response()->json([
-        //     'status' => 'success',
-        //     'message' => 'Produk created successfully.',
-        //     'data' => $request->input('stok')
-        // ], 201);
-
         $validated = $request->validate([
             'id_toko' => 'required|exists:toko,id_toko',
             'kode_kategori' => 'required|exists:kategori,kode_kategori',
             'nama_produk' => 'required|string|max:255',
             'harga' => 'required|integer|min:0',
-            // 'stok' =>  $request->input('stok') != "null" ? 'integer|min:0' : '',
             'is_stock_managed' => 'int',
-            'url_img' => 'sometimes|image|mimes:jpg,jpeg,png|max:2048', // Validate image upload
+            'url_img' => 'sometimes|image|mimes:jpg,jpeg,png|max:5120', // Validate image upload
         ]);
 
         try {
+            $imagePath = null; // Initialize the image path
 
             if ($request->hasFile('url_img')) {
+                $manager = new ImageManager(new Driver());
+
+                // Get the uploaded file
                 $file = $request->file('url_img');
+
+                // Create a unique filename for the image
                 $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
-                $imagePath = $file->move("uploadfile/produk/", $fileName);
-            } else {
-                $imagePath = null; // No image uploaded
+                $imagePath = public_path('uploadfile/produk/' . $fileName);
+                $img = $manager->read($file);
+                $img->toWebp(60)->save($imagePath);
+                $imagePath = "uploadfile/produk/" . $fileName;
             }
 
-            // Create the product
-            // if ($validated['stok'] == "null") {
-            // }
             unset($validated['stok']);
+            $validated['url_img'] = $imagePath;
 
-            $validated['url_img'] = $imagePath; // Store the image URL in the database
+            // Store the product
             $produk = Produk::create($validated);
 
             return response()->json([
                 'status' => 'success',
-                'message' => $imagePath,
+                'message' => 'Produk created successfully.',
                 'data' => new ProdukResource($produk)
             ], 201);
         } catch (\Exception $e) {
@@ -64,6 +64,7 @@ class ProdukControllerApi extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Get all Produk.
@@ -111,7 +112,7 @@ class ProdukControllerApi extends Controller
     public function update(Request $request, $id)
     {
         try {
-           
+
             $produk = Produk::findOrFail($id);
 
             $validated = $request->validate([
@@ -120,25 +121,28 @@ class ProdukControllerApi extends Controller
                 'nama_produk' => 'sometimes|string|max:255',
                 'harga' => 'sometimes|integer|min:0',
                 'is_stock_managed' => 'int',
-            //    'stok' =>  $request->input('stok') != "null"? 'sometimes|integer|min:0' : 'sometimes',
-                'url_img' => 'sometimes|image|mimes:jpg,jpeg,png,gif|max:2048', // Validate image upload
+                //    'stok' =>  $request->input('stok') != "null"? 'sometimes|integer|min:0' : 'sometimes',
+                'url_img' => 'sometimes|image|mimes:jpg,jpeg,png,gif|max:5120', // Validate image upload
             ]);
-           
+
             // if ($validated['stok'] == "null") {
-               
+
             // }
             // unset($validated['stok']);
             // Handle image upload (update)
-           if ($request->hasFile('url_img')) {
-                $file = $request->file('url_img'); 
-            
+            if ($request->hasFile('url_img')) {
+                $manager = new ImageManager(new Driver());
+                $file = $request->file('url_img');
                 $oldPath = public_path($produk->url_img);
                 if ($produk->url_img && file_exists($oldPath)) { // Perbaiki kurung tutup
                     unlink($oldPath);
                 }
                 // Simpan file baru dengan nama unik
                 $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
-                $imagePath = $file->move("uploadfile/produk/", $fileName);
+                $imagePath = public_path('uploadfile/produk/' . $fileName);
+                $img = $manager->read($file);
+                $img->toWebp(60)->save($imagePath);
+                $imagePath = "uploadfile/produk/" . $fileName;
                 $validated['url_img'] = $imagePath;
             }
 
@@ -174,10 +178,10 @@ class ProdukControllerApi extends Controller
                     'errors' => 'No produk found with the given id.'
                 ], 404);
             }
-                $oldPath = public_path($produk->url_img);
-                if (is_file($oldPath) && file_exists($oldPath)) { // Perbaiki kurung tutup
-                    unlink($oldPath);
-                }
+            $oldPath = public_path($produk->url_img);
+            if (is_file($oldPath) && file_exists($oldPath)) { // Perbaiki kurung tutup
+                unlink($oldPath);
+            }
             $produk->delete();
 
             return response()->json([

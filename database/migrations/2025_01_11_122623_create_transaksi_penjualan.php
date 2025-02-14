@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('totalharga');
             $table->integer('pembayaran');
             $table->integer('kembalian');
-            $table->string('ppn',6)->nullable();
+            $table->integer('ppn')->nullable();
             $table->enum('jenis_pembayaran', ['Tunai', 'Non-Tunai']);
             $table->timestamps();
         });

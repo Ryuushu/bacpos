@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Drivers\Imagick\Driver;
+use Intervention\Image\ImageManager;
 
 class TokoControllerApi extends Controller
 {
@@ -56,18 +59,18 @@ class TokoControllerApi extends Controller
                 'alamat_toko' => 'required|string|max:200',
                 'whatsapp' => 'nullable|string|max:20',
                 'instagram' => 'nullable|string|max:50',
-                'url_img' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // Validate image
+                'url_img' => 'nullable|image|mimes:jpeg,png,jpg|max:5120', // Validate image
             ]);
-
-
 
             $urlImg = null;
             if ($request->hasFile('url_img')) {
+                $manager = new ImageManager(new GdDriver());
                 $file = $request->file('url_img');
                 $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
-                $urlImg = $file->move("uploadfile/toko/", $fileName);
-            } else {
-                $urlImg = null; // No image uploaded
+                $imagePath = public_path("uploadfile/toko/" . $fileName);
+                $image = $manager->read($file);
+                $image->toWebp(60)->save($imagePath);
+                $urlImg = "uploadfile/toko/" . $fileName;
             }
 
             $toko = Toko::create([
@@ -85,10 +88,10 @@ class TokoControllerApi extends Controller
                 'data' => new TokoResource($toko)
             ], 201);
         } catch (\Exception $e) {
-            Log::error("Error updating produk: " . $e->getMessage());
+            Log::error("Error storing toko: " . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error updating data.',
+                'message' => 'Error storing data.',
                 'errors' => $e->getMessage()
             ], 500);
         }
@@ -138,7 +141,7 @@ class TokoControllerApi extends Controller
                 'alamat_toko' => 'required|string|max:200',
                 'whatsapp' => 'nullable|string|max:20',
                 'instagram' => 'nullable|string|max:50',
-                'url_img' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate image
+                'url_img' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // Validate image
             ]);
 
             $toko = Toko::where('id_pemilik', $pemilik->id_pemilik)->where('id_toko', $id)->first();
@@ -152,15 +155,17 @@ class TokoControllerApi extends Controller
 
             $urlImg = $toko->url_img; // Keep the existing image if no new one is uploaded
             if ($request->hasFile('url_img')) {
+                $manager = new ImageManager(new GdDriver());
                 $file = $request->file('url_img');
-
+                $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $imagePath = public_path("uploadfile/toko/" . $fileName);
+                $image = $manager->read($file);
+                $image->toWebp(60)->save($imagePath);
+                $urlImg = "uploadfile/toko/" . $fileName;
                 $oldPath = public_path($toko->url_img);
                 if ($toko->url_img && file_exists($oldPath)) { // Perbaiki kurung tutup
                     unlink($oldPath);
                 }
-                // Simpan file baru dengan nama unik
-                $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
-                $urlImg = $file->move("uploadfile/toko/", $fileName);
             }
 
             $toko->update([
@@ -240,7 +245,7 @@ class TokoControllerApi extends Controller
             ->where('created_at', 'like', "$currentMonth%")
             ->sum('totalharga');
 
-            $topProdukBulanan = Produk::where('id_toko', $idtoko)
+        $topProdukBulanan = Produk::where('id_toko', $idtoko)
             ->withSum('detailTransaksi as total_qty', 'qty')
             ->having('total_qty', '>', 0) // Filter quantity lebih dari 0
             ->orderByDesc('total_qty')  // Urutkan berdasarkan total_qty terbesar
@@ -264,7 +269,7 @@ class TokoControllerApi extends Controller
             'status' => 'success',
             'message' => 'Data successful',
             'data' => [
-                'toko'=>new TokoResource($toko),
+                'toko' => new TokoResource($toko),
                 'produk_count' => $produkCount,
                 'transaksi_count' => $transaksiCount,
                 'total_pendapatan_harian' => $totalPendapatanHarian,
