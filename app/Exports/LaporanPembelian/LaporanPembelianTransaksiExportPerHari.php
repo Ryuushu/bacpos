@@ -138,12 +138,12 @@ class LaporanDetailTransaksiExport implements FromCollection, WithHeadings, With
         ->get();
         $data = $table->map(function ($data) {
             return [
-                'id_transaksi' => $data->id_transaksi,
+                'id_transaksi' => $data->id_transaksi_pembelian,
                 'namauser ' => $data->transaksi->user->pemilik != null ? $data->transaksi->user->pemilik->nama_pemilik : $data->transaksi->user->pekerja->nama_pekerja,
                 'namaproduk' => $data->produk->nama_produk,
-                'harga' => $data->harga,
                 'qty' => $data->qty,
-                'subtotal' => $data->subtotal,
+                'hargabeli' => $data->harga_beli,
+                'harga' => $data->harga,
                 'created_at' => date('Y-m-d H:i:s', strtotime($data->created_at)),
             ];
         });
@@ -161,9 +161,9 @@ class LaporanDetailTransaksiExport implements FromCollection, WithHeadings, With
             'ID Transaksi',
             'Nama Kasir',
             'Nama Produk',
-            'Harga Produk',
             'Qty',
-            'Subtotal',
+            'Harga Beli',
+            'Harga Jual',
             'Waktu Transaksi',
         ];
     }

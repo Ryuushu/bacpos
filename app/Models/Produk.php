@@ -21,7 +21,8 @@ class Produk extends Model
         'stok',
         'stok',
         'url_img',
-        'is_stock_managed'
+        'is_stock_managed',
+        'harga_beli'
     ];
 
     public function toko()

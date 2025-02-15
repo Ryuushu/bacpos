@@ -31,6 +31,7 @@ class TransaksiPembelianControllerApi extends Controller
             'items.*.id_kategori' => '',
             'items.*.nama_produk' => '',
             'items.*.harga' => 'integer',
+            'items.*.harga_beli' => 'integer',
             'items.*.stok' => 'required|integer|min:1',
             'items.*.tipe' => 'required|string',
             'items.*.file' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:5120',
@@ -77,6 +78,7 @@ class TransaksiPembelianControllerApi extends Controller
                         'id_toko' =>  $validated['id_toko'],
                         'harga' => $item['harga'],
                         'stok' => $item['stok'],
+                        'harga_beli'=>$item['harga_beli'],
                         'is_stock_managed' => 1,
                         'kode_kategori' => $item['id_kategori'],
                         'url_img' => $imagePath
@@ -109,20 +111,22 @@ class TransaksiPembelianControllerApi extends Controller
                         'jumlah' => $item['stok'],
                         'stok_awal' => $stokAwal,
                         'stok_akhir' => $stokAkhir,
-                        'keterangan' => 'Transaksi penjualan, ID Transaksi: ' . $idTransaksi,
+                        'keterangan' => 'Transaksi Pembelian, ID Transaksi: ' . $idTransaksi,
                     ]);
                 }
                 $harga = $produk->harga;
                 $subtotal = $harga * $item['stok'];
+                
                 DetailTransaksiPembelian::create([
                     'id_transaksi_pembelian' => $idTransaksi,
                     'kode_produk' =>  $produk->kode_produk,
                     'harga' => $harga,
+                    'harga_beli' => $produk->harga_beli,
                     'qty' => $item['stok'],
                     'subtotal' => $subtotal,
                     'created_at' => now()->format('Y-m-d H:i:s'),
                 ]);
-                $totalHarga += $subtotal;
+                $totalHarga += $produk->harga;
             }
 
             $transaksi->update([
@@ -154,41 +158,40 @@ class TransaksiPembelianControllerApi extends Controller
             'start_date' => 'nullable|date|before_or_equal:end_date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
+    
         // Ambil parameter StartDate dan EndDate dari request
         $startDate = $validated['start_date'] ?? Carbon::now()->toDateString();
         $endDate = $validated['end_date'] ?? Carbon::now()->toDateString();
-
-
+    
         // Query transaksi dengan filter tanggal jika diberikan
         $transaksiQuery = TransaksiPembelian::with('toko', 'user.pemilik', 'detailTransaksiPembelian.produk')
-            ->where('id_toko', $id_toko);
-
-        if ($startDate && $endDate) {
-            $transaksiQuery->whereBetween('created_at', [
+            ->where('id_toko', $id_toko)
+            ->whereBetween('created_at', [
                 $startDate . ' 00:00:00',
                 $endDate . ' 23:59:59'
-            ]);
-        }
-
+            ])
+            ->orderBy('created_at', 'desc'); // Urutkan dari terbaru ke terlama
+    
         $transaksi = $transaksiQuery->get();
-
-
+    
+        // Mengelompokkan transaksi berdasarkan tanggal (urut dari terbaru)
         $transaksiGrouped = $transaksi->groupBy(function ($item) {
-            return Carbon::parse($item->created_at)->format('Y-m-d'); // Group berdasarkan tanggal
-        });
-
+            return Carbon::parse($item->created_at)->format('Y-m-d');
+        })->sortKeysDesc(); // Mengurutkan tanggal dari terbaru ke terlama
+    
         // Menambahkan total per grup
         $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
-            $total = $group->sum('totalharga'); 
+            $total = $group->sum('totalharga');
             return [
                 'total' => $total,
                 'data' => $group,
             ];
         });
-
+    
         return response()->json([
             'message' => 'Data transaksi berhasil diambil',
             'data' => $transaksiWithSum,
         ]);
     }
+    
 }

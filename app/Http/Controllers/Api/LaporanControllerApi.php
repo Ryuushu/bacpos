@@ -52,7 +52,7 @@ class LaporanControllerApi extends Controller
                     );
 
                 case 'penjualan-berdasarkan-produk':
-                    return Excel::download(new LaporanPenjualanBerdasarkanProdukExport($idtoko), "laporan_{$namatoko}_penjualan_berdasarkan_produk.xlsx");
+                    return Excel::download(new LaporanPenjualanBerdasarkanProdukExport($idtoko), "{$namatoko}_laporan_penjualan_berdasarkan_produk.xlsx");
 
                 case 'transaksi-per-pengguna':
 
@@ -115,25 +115,21 @@ class LaporanControllerApi extends Controller
     }
     public function test($type, Request $req, $idtoko)
     {
-        $table = Transaksi::with('user.pekerja', 'user.pemilik')->where('id_toko', $idtoko)->whereDate('created_at', Carbon::today())->get();
-        $totalHarga = $table->sum(function ($data) {
-            return $data->totalharga;  // Pastikan untuk mengganti dengan kolom harga yang sesuai
-        });
-        $totalPembayan = $table->sum(function ($data) {
-            return $data->pembayaran;  // Pastikan untuk mengganti dengan kolom harga yang sesuai
-        });
-        $data = $table->map(function ($data) {
+        $table = Transaksi::with("user.pemilik","user.pekerja")
+        ->where("id_toko", $idtoko)
+        ->get();
+        $data = $table->groupBy(function ($item) {
+            return $item->user->pemilik != null 
+                ? $item->user->pemilik->nama_pemilik 
+                : $item->user->pekerja->nama_pekerja;
+        })->map(function ($groupedData, $nama) {
             return [
-                'id_transaksi' => $data->id_transaksi,
-                'nama' => $data->user->pemilik != null ? $data->user->pemilik->nama_pemilik : $data->user->pekerja->nama_pekerja,
-                'created_at' => date('Y-m-d H:i:s', strtotime($data->created_at)),
-                'ppn' => $data->ppn,
-                'totalharga' => $data->totalharga,
-                'pembayaran' => $data->pembayaran,
-                'kembalian' => $data->kembalian == 0 ? '0' : $data->kembalian,
-                'jenis_pembayaran' => $data->jenis_pembayaran,
+                'nama' => $nama,
+                'jumlah_transaksi' => $groupedData->count(),
+                'total_transaksi' => $groupedData->sum('totalharga')
             ];
-        });
+        })->values();
+      
         return response()->json([
             $data
         ], 201);

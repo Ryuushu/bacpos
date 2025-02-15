@@ -13,7 +13,7 @@ class ProdukResource extends JsonResource
             'nama_produk' => $this->nama_produk,
             'harga' => $this->harga,
             'stok' => $this->stok,
-            'url_img' => $this->url_img ? asset($this->url_img) : null,
+            'url_img' => $this->url_img ? url($this->url_img) : null,
             'is_stock_managed' => $this->is_stock_managed,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

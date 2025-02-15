@@ -10,7 +10,7 @@ class DetailTransaksiPembelian extends Model
 
     protected $table = 'detail_transaksi_pembelian';
     protected $primaryKey = 'id';
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'id_transaksi_pembelian',
@@ -18,6 +18,7 @@ class DetailTransaksiPembelian extends Model
         'harga',
         'qty',
         'subtotal',
+        'harga_beli',
     ];
 
     public function transaksi()

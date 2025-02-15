@@ -41,10 +41,10 @@ class AuthControllerApi extends Controller
                 'password' => Hash::make($request->password),
                 'role' => 'pemilik',
             ]);
-                $pemilik = Pemilik::create([
-                    'nama_pemilik' => $request->nama_pemilik,
-                    'id_user' => $user->id_user
-                ]);
+            $pemilik = Pemilik::create([
+                'nama_pemilik' => $request->nama_pemilik,
+                'id_user' => $user->id_user
+            ]);
 
             // $otp = rand(100000, 999999);
             // // Menghasilkan OTP acak 6 digit
@@ -75,7 +75,7 @@ class AuthControllerApi extends Controller
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
+            'identifier' => 'required|string', // Bisa email, nama pekerja, atau nama pemilik
             'password' => 'required|string|min:6',
         ]);
 
@@ -87,7 +87,14 @@ class AuthControllerApi extends Controller
             ], 422);
         }
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->identifier)
+            ->orWhereHas('pekerja', function ($query) use ($request) {
+                $query->where('nama_pekerja', $request->identifier);
+            })
+            ->orWhereHas('pemilik', function ($query) use ($request) {
+                $query->where('nama_pemilik', $request->identifier);
+            })
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -97,8 +104,10 @@ class AuthControllerApi extends Controller
         }
 
         $token = $user->createToken('mobpos')->plainTextToken;
+
         $pekerja = $user->pekerja;
         $pemilik = $user->pemilik;
+
         return response()->json([
             'status' => 'success',
             'message' => 'Login successful',
@@ -110,6 +119,7 @@ class AuthControllerApi extends Controller
             ]
         ], 200);
     }
+
 
     // Logout
     public function logout(Request $request)
@@ -149,7 +159,7 @@ class AuthControllerApi extends Controller
 
         // OTP valid, verifikasi pengguna
         $user = User::find($otpRecord->id_user);
-      
+
         $user->is_verified = true;
         $success = $user->save();
         if (!$success) {

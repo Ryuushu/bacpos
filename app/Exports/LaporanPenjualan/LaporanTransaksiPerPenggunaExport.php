@@ -19,13 +19,22 @@ class LaporanTransaksiPerPenggunaExport implements FromCollection, WithHeadings
      */
     public function collection()
     {
-        return  DetailTransaksi::join("transaksi_penjualan", "detail_transaksi_penjualan.id_transaksi", "=", "transaksi_penjualan.id_transaksi")
-            ->where("transaksi_penjualan.id_toko", $this->idtoko)
-            ->selectRaw("transaksi_penjualan.id_user, 
-                SUM(detail_transaksi_penjualan.subtotal) as total_transaksi,
-                COUNT(DISTINCT transaksi_penjualan.id_transaksi) as jumlah_transaksi")
-            ->groupBy("transaksi_penjualan.id_user")
-            ->get();
+        $table = Transaksi::with("user.pemilik","user.pekerja")
+        ->where("id_toko", $this->idtoko)
+        ->get();
+        $data = $table->groupBy(function ($item) {
+            return $item->user->pemilik != null 
+                ? $item->user->pemilik->nama_pemilik 
+                : $item->user->pekerja->nama_pekerja;
+        })->map(function ($groupedData, $nama) {
+            return [
+                'nama' => $nama,
+                'total_transaksi' => $groupedData->sum('totalharga'),
+                'jumlah_transaksi' => $groupedData->count(),
+
+            ];
+        })->values();
+        return $data;
     }
 
     /**

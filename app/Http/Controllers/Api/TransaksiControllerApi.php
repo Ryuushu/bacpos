@@ -104,7 +104,7 @@ class TransaksiControllerApi extends Controller
                         'jumlah' => $item['qty'],
                         'stok_awal' => $stokAwal,
                         'stok_akhir' => $stokAkhir,
-                        'keterangan' => 'Transaksi penjualan, ID Transaksi: ' . $idTransaksi,
+                        'keterangan' => 'Transaksi Penjualan, ID Transaksi: ' . $idTransaksi,
                     ]);
                 }
             }
@@ -178,55 +178,46 @@ class TransaksiControllerApi extends Controller
         }
     }
     public function riwayat($id_toko, Request $request)
-    {
-        // Validasi parameter StartDate dan EndDate
-        $validated = $request->validate([
-            'start_date' => 'nullable|date|before_or_equal:end_date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
-        // Ambil parameter StartDate dan EndDate dari request
-        $startDate = $validated['start_date'] ?? Carbon::now()->toDateString();
-        $endDate = $validated['end_date'] ?? Carbon::now()->toDateString();
+{
+    // Validasi parameter StartDate dan EndDate
+    $validated = $request->validate([
+        'start_date' => 'nullable|date|before_or_equal:end_date',
+        'end_date' => 'nullable|date|after_or_equal:start_date',
+    ]);
 
+    // Ambil parameter StartDate dan EndDate dari request
+    $startDate = $validated['start_date'] ?? Carbon::now()->toDateString();
+    $endDate = $validated['end_date'] ?? Carbon::now()->toDateString();
 
-        // Query transaksi dengan filter tanggal jika diberikan
-        $transaksiQuery = Transaksi::with('toko', 'user.pekerja', 'user.pemilik', 'detailTransaksi.produk')
-            ->where('id_toko', $id_toko);
+    // Query transaksi dengan filter tanggal jika diberikan
+    $transaksiQuery = Transaksi::with('toko', 'user.pekerja', 'user.pemilik', 'detailTransaksi.produk')
+        ->where('id_toko', $id_toko)
+        ->whereBetween('created_at', [
+            $startDate . ' 00:00:00',
+            $endDate . ' 23:59:59'
+        ])
+        ->orderBy('created_at', 'desc'); // Urutkan dari terbaru ke terlama
 
-        if ($startDate && $endDate) {
-            $transaksiQuery->whereBetween('created_at', [
-                $startDate . ' 00:00:00',
-                $endDate . ' 23:59:59'
-            ]);
-        }
+    $transaksi = $transaksiQuery->get();
 
-        $transaksi = $transaksiQuery->get();
+    // Mengelompokkan transaksi berdasarkan tanggal (urut dari terbaru)
+    $transaksiGrouped = $transaksi->groupBy(function ($item) {
+        return Carbon::parse($item->created_at)->format('Y-m-d');
+    })->sortKeysDesc(); // Mengurutkan tanggal dari terbaru ke terlama
 
-        // Jika tidak ada transaksi untuk toko tersebut
-        // if ($transaksi->isEmpty()) {
-        //     return response()->json(['message' => 'Tidak ada transaksi ditemukan untuk toko ini.'], 404);
-        // }
+    // Menambahkan total per grup
+    $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
+        $total = $group->sum('totalharga');
+        return [
+            'total' => $total,
+            'data' => $group,
+        ];
+    });
 
-        // Mengelompokkan transaksi berdasarkan tanggal
-        $transaksiGrouped = $transaksi->groupBy(function ($item) {
-            return Carbon::parse($item->created_at)->format('Y-m-d'); // Group berdasarkan tanggal
-        });
-        $totalPerHari = $transaksiGrouped->map(function ($transaksiPerHari) {
-            return;
-        });
+    return response()->json([
+        'message' => 'Data transaksi berhasil diambil',
+        'data' => $transaksiWithSum,
+    ]);
+}
 
-        // Menambahkan total per grup
-        $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
-            $total = $group->sum('totalharga');
-            return [
-                'total' => $total,
-                'data' => $group,
-            ];
-        });
-
-        return response()->json([
-            'message' => 'Data transaksi berhasil diambil',
-            'data' => $transaksiWithSum,
-        ]);
-    }
 }

@@ -245,10 +245,24 @@ class TokoControllerApi extends Controller
             ->where('created_at', 'like', "$currentMonth%")
             ->sum('totalharga');
 
-        $topProdukBulanan = Produk::where('id_toko', $idtoko)
+        $topProdukAll = Produk::where('id_toko', $idtoko)
             ->withSum('detailTransaksi as total_qty', 'qty')
             ->having('total_qty', '>', 0) // Filter quantity lebih dari 0
             ->orderByDesc('total_qty')  // Urutkan berdasarkan total_qty terbesar
+            ->limit(5)
+            ->get(['kode_produk', 'nama_produk', 'id_toko']);
+
+        $topProdukBulanan = Produk::where('id_toko', $idtoko)
+            ->whereHas('detailTransaksi', function ($query) {
+                $query->whereMonth('created_at', date('m'))
+                    ->whereYear('created_at', date('Y'));
+            })
+            ->withSum(['detailTransaksi as total_qty' => function ($query) {
+                $query->whereMonth('created_at', date('m'))
+                    ->whereYear('created_at', date('Y'));
+            }], 'qty')
+            ->having('total_qty', '>', 0)
+            ->orderByDesc('total_qty')
             ->limit(5)
             ->get(['kode_produk', 'nama_produk', 'id_toko']);
 
@@ -260,6 +274,9 @@ class TokoControllerApi extends Controller
         }
         if ($totalPendapatanHarian === null) {
             $totalPendapatanHarian = 0; // Jika tidak ada pendapatan, set menjadi 0
+        }
+        if ($topProdukAll === null) {
+            $topProdukAll = 0; // Jika tidak ada pendapatan, set menjadi 0
         }
         if ($totalPendapatanBulanan === null) {
             $totalPendapatanBulanan = 0; // Jika tidak ada pendapatan, set menjadi 0
@@ -274,6 +291,7 @@ class TokoControllerApi extends Controller
                 'transaksi_count' => $transaksiCount,
                 'total_pendapatan_harian' => $totalPendapatanHarian,
                 'total_pendapatan_bulanan' => $totalPendapatanBulanan,
+                'top_produk_all' => $topProdukAll,
                 'top_produk_bulanan' => $topProdukBulanan,
             ]
         ]);
