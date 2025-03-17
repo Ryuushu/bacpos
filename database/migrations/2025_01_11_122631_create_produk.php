@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('id_toko')->references("id_toko")->on("toko")->restrictOnDelete()->cascadeOnUpdate();
             $table->foreignId('kode_kategori')->references("kode_kategori")->on("kategori")->restrictOnDelete()->cascadeOnUpdate();
             $table->integer('harga');
+            $table->integer('harga_beli')->nullable();
             $table->integer('stok')->nullable()->default(0); // Stok opsional
             $table->boolean('is_stock_managed')->default(false); // Indikator stok dikelola
             $table->string('url_img')->nullable();

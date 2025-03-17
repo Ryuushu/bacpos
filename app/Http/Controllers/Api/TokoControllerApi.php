@@ -6,15 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Toko;
 use Illuminate\Http\Request;
 use App\Http\Resources\TokoResource;
-use App\Models\DetailTransaksi;
 use App\Models\Produk;
 use App\Models\Transaksi;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
-use Intervention\Image\Drivers\Imagick\Driver;
 use Intervention\Image\ImageManager;
 
 class TokoControllerApi extends Controller
@@ -194,7 +191,8 @@ class TokoControllerApi extends Controller
 
     // Delete toko for the logged-in pemilik
     public function destroy($id)
-    {
+{
+    try {
         // Get the logged-in user and join with pemilik to get id_pemilik
         $pemilik = Auth::user()->pemilik; // Assuming user has a relationship with pemilik
 
@@ -205,8 +203,10 @@ class TokoControllerApi extends Controller
             ], 404);
         }
 
-        $toko = Toko::where('id_pemilik', $pemilik->id_pemilik)->where('id_toko', $id)->first();
-
+        // Cari toko berdasarkan id_pemilik dan id_toko
+        $toko = Toko::where('id_pemilik', $pemilik->id_pemilik)
+                    ->where('id_toko', $id)
+                    ->first();
 
         if (!$toko) {
             return response()->json([
@@ -214,17 +214,36 @@ class TokoControllerApi extends Controller
                 'message' => 'Toko not found or you do not have permission to delete this toko.',
             ], 404);
         }
+
+        DB::beginTransaction(); // Mulai transaksi
+
+        // Simpan path gambar sebelum delete
         $oldPath = public_path($toko->url_img);
-        if (is_file($oldPath) && file_exists($oldPath)) { // Perbaiki kurung tutup
+
+        // Hapus toko dari database
+        $toko->delete();
+
+        DB::commit(); // Konfirmasi transaksi database
+
+        // Setelah commit, baru hapus file
+        if (is_file($oldPath)) {
             unlink($oldPath);
         }
-        $toko->delete();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Toko deleted successfully',
+            'message' => 'Toko deleted successfully.',
         ]);
+    } catch (\Exception $e) {
+        DB::rollBack(); // Batalkan transaksi jika terjadi error
+        Log::error("Error deleting toko: " . $e->getMessage());
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Error deleting data.',
+            'errors' => $e->getMessage()
+        ], 500);
     }
+}
     public function dashboardtoko($idtoko)
     {
         $toko = Toko::where('id_toko', $idtoko)->first();

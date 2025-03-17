@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ProdukResource;
 use App\Models\Produk;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\Facades\Image;
@@ -89,8 +90,6 @@ class ProdukControllerApi extends Controller
             :
             $produk = Produk::with(['toko', 'kategori'])->where('id_toko', $id)->get();
 
-
-
         if (!$produk) {
             return response()->json([
                 'status' => 'error',
@@ -166,29 +165,31 @@ class ProdukControllerApi extends Controller
     /**
      * Delete a Produk.
      */
+    
     public function destroy($id)
     {
+        DB::beginTransaction(); // Mulai transaksi
         try {
             $produk = Produk::findOrFail($id);
-
-            if (!$produk) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Produk not found.',
-                    'errors' => 'No produk found with the given id.'
-                ], 404);
-            }
+    
             $oldPath = public_path($produk->url_img);
-            if (is_file($oldPath) && file_exists($oldPath)) { // Perbaiki kurung tutup
+    
+            // Hapus produk dari database dulu
+            $produk->delete();
+    
+            DB::commit(); // Konfirmasi transaksi database
+    
+            // Setelah commit, baru hapus file
+            if (is_file($oldPath) && file_exists($oldPath)) {
                 unlink($oldPath);
             }
-            $produk->delete();
-
+    
             return response()->json([
                 'status' => 'success',
                 'message' => 'Produk deleted successfully.'
             ], 200);
         } catch (\Exception $e) {
+            DB::rollBack(); // Batalkan transaksi jika terjadi error
             Log::error("Error deleting produk: " . $e->getMessage());
             return response()->json([
                 'status' => 'error',
@@ -197,4 +198,5 @@ class ProdukControllerApi extends Controller
             ], 500);
         }
     }
+    
 }

@@ -29,7 +29,7 @@ class TransaksiControllerApi extends Controller
             'bayar' => 'required|integer|min:1',
             'jenis_pembayaran' => 'required',
             'ppn' => 'nullable',
-
+            'bulatppn' => 'nullable',
         ]);
         // Generate ID transaksi
         $idTransaksi = 'TRX-' . $validated['id_toko'] . now()->format('dmYHis') . rand(1000, 9999);
@@ -48,6 +48,7 @@ class TransaksiControllerApi extends Controller
                 'kembalian' => 0,
                 'jenis_pembayaran' => $validated['jenis_pembayaran'],
                 'ppn' => $validated['ppn'],
+                'bulatppn' => $validated['bulatppn'],
                 'created_at' => now()->format('Y-m-d H:i:s'),
             ]);
 
@@ -155,6 +156,7 @@ class TransaksiControllerApi extends Controller
                 'id_transaksi' => $idTransaksi,
                 'subtotal'=>$totalHarga,
                 'ppn'=>$validated["ppn"],
+                'bulatppn'=>$validated["bulatppn"],
                 'totalharga' => $calculatedTotalAkhir,
                 'pembayaran' => $validated['bayar'],
                 'jenis_pembayaran' => $transaksi->jenis_pembayaran,

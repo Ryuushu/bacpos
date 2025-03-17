@@ -9,10 +9,14 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class LaporanTransaksiPerPenggunaExport implements FromCollection, WithHeadings
 {
+    protected $start_date;
+    protected $end_date;
     protected $idtoko;
-    public function __construct($idtoko)
+    public function __construct($idtoko, $start_date, $end_date)
     {
         $this->idtoko = $idtoko;
+        $this->start_date = $start_date;
+        $this->end_date = $end_date;
     }
     /**
      * @return \Illuminate\Support\Collection
@@ -20,6 +24,7 @@ class LaporanTransaksiPerPenggunaExport implements FromCollection, WithHeadings
     public function collection()
     {
         $table = Transaksi::with("user.pemilik","user.pekerja")
+        ->whereBetween('created_at', [$this->start_date, $this->end_date])
         ->where("id_toko", $this->idtoko)
         ->get();
         $data = $table->groupBy(function ($item) {

@@ -22,7 +22,8 @@ class Transaksi extends Model
         'pembayaran',
         'kembalian',
         'jenis_pembayaran',
-        'ppn'
+        'ppn',
+        'bulatppn',
 
     ];
 

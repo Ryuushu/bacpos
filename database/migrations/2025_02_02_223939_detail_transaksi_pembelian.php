@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('harga');
             $table->integer('qty');
             $table->integer('subtotal');
+            $table->integer('harga_beli');
             $table->timestamps();
         });
     }

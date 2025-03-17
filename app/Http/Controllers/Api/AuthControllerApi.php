@@ -87,21 +87,34 @@ class AuthControllerApi extends Controller
             ], 422);
         }
 
-        $user = User::where('email', $request->identifier)
+        $user = User::where('email', strtolower(trim($request->identifier)))
             ->orWhereHas('pekerja', function ($query) use ($request) {
-                $query->where('nama_pekerja', $request->identifier);
+                $query->where('nama_pekerja', trim($request->identifier));
             })
             ->orWhereHas('pemilik', function ($query) use ($request) {
-                $query->where('nama_pemilik', $request->identifier);
+                $query->where('nama_pemilik', trim($request->identifier));
             })
             ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid credentials'
+                'message' => 'kredential salah'
             ], 401);
         }
+        if ($user->role === 'admin') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pemilik tidak diperbolehkan login'
+            ], 403);
+        }
+        if (!$user->is_verified) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $user->is_verified
+            ], 403);
+        }
+
 
         $token = $user->createToken('mobpos')->plainTextToken;
 
@@ -114,8 +127,8 @@ class AuthControllerApi extends Controller
             'data' => [
                 'user' => $user,
                 'token' => $token,
-                'pekerja' => $pekerja, // Tambahkan data pekerja
-                'pemilik' => $pemilik, // Tambahkan data pemilik
+                'pekerja' => $pekerja,
+                'pemilik' => $pemilik,
             ]
         ], 200);
     }

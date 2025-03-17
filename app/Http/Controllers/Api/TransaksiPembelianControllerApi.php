@@ -84,16 +84,14 @@ class TransaksiPembelianControllerApi extends Controller
                         'url_img' => $imagePath
                     ]);
                     $stokAwal = $produk->stok;
-                    $stokAkhir = $produk->stok + $item['stok'];
-
                     // Menambahkan ke tabel kartustok
                     KartuStok::create([
                         'kode_produk' => $produk->kode_produk,
                         'jenis_transaksi' => 'masuk', // Karena ini pengurangan stok
                         'tanggal' => now()->format('Y-m-d H:i:s'),
                         'jumlah' => $item['stok'],
-                        'stok_awal' => $stokAwal,
-                        'stok_akhir' => $stokAkhir,
+                        'stok_awal' => 0,
+                        'stok_akhir' => $item['stok'],
                         'keterangan' => 'Transaksi penjualan, ID Transaksi: ' . $idTransaksi,
                     ]);
                 } else {

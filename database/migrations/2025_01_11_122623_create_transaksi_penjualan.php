@@ -15,10 +15,14 @@ return new class extends Migration
             $table->string('id_transaksi',25)->primary();
             $table->foreignId('id_toko')->constrained('toko','id_toko')->restrictOnDelete();
             $table->foreignId('id_user')->constrained('users','id_user')->restrictOnDelete();
+            $table->foreignId('id_diskon')->nullable()->constrained('diskon', 'id_diskon')->restrictOnDelete();
             $table->integer('totalharga');
             $table->integer('pembayaran');
             $table->integer('kembalian');
             $table->integer('ppn')->nullable();
+            $table->integer('bulatppn')->nullable();
+            $table->integer('valuediskon')->nullable();
+            $table->enum('tipediskon', ['nominal', 'persen']);
             $table->enum('jenis_pembayaran', ['Tunai', 'Non-Tunai']);
             $table->timestamps();
         });

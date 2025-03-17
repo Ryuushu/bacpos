@@ -52,13 +52,21 @@ class LaporanControllerApi extends Controller
                     );
 
                 case 'penjualan-berdasarkan-produk':
-                    return Excel::download(new LaporanPenjualanBerdasarkanProdukExport($idtoko), "{$namatoko}_laporan_penjualan_berdasarkan_produk.xlsx");
+                    $validated = $req->validate([
+                        'tglmulai' => 'required|date|before_or_equal:tglakhir',
+                        'tglakhir' => 'required|date|after_or_equal:tglmulai',
+                    ]);
+                    return Excel::download(new LaporanPenjualanBerdasarkanProdukExport($idtoko, $validated["tglmulai"], $validated["tglakhir"]),
+                     "{$namatoko}_laporan_penjualan_berdasarkan_produk_{$validated['tglmulai']}_to_{$validated['tglakhir']}.xlsx");
 
                 case 'transaksi-per-pengguna':
-
+                    $validated = $req->validate([
+                        'tglmulai' => 'required|date|before_or_equal:tglakhir',
+                        'tglakhir' => 'required|date|after_or_equal:tglmulai',
+                    ]);
                     return Excel::download(
-                        new LaporanTransaksiPerPenggunaExport($idtoko),
-                        "{$namatoko}_laporan__transaksi_penjualan_per_pengguna_.xlsx"
+                        new LaporanTransaksiPerPenggunaExport($idtoko, $validated["tglmulai"], $validated["tglakhir"]),
+                        "{$namatoko}_laporan__transaksi_penjualan_per_pengguna_{$validated['tglmulai']}_to_{$validated['tglakhir']}.xlsx"
                     );
 
                 default:
@@ -115,12 +123,12 @@ class LaporanControllerApi extends Controller
     }
     public function test($type, Request $req, $idtoko)
     {
-        $table = Transaksi::with("user.pemilik","user.pekerja")
-        ->where("id_toko", $idtoko)
-        ->get();
+        $table = Transaksi::with("user.pemilik", "user.pekerja")
+            ->where("id_toko", $idtoko)
+            ->get();
         $data = $table->groupBy(function ($item) {
-            return $item->user->pemilik != null 
-                ? $item->user->pemilik->nama_pemilik 
+            return $item->user->pemilik != null
+                ? $item->user->pemilik->nama_pemilik
                 : $item->user->pekerja->nama_pekerja;
         })->map(function ($groupedData, $nama) {
             return [
@@ -129,7 +137,7 @@ class LaporanControllerApi extends Controller
                 'total_transaksi' => $groupedData->sum('totalharga')
             ];
         })->values();
-      
+
         return response()->json([
             $data
         ], 201);

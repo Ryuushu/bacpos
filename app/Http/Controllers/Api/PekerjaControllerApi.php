@@ -95,14 +95,12 @@ class PekerjaControllerApi extends Controller
        
         $validated = $request->validate([
             'id_toko' => 'required|exists:toko,id_toko',
-            'nama_pekerja' => 'required|string|max:100',
-            'alamat_pekerja' => 'required|string|max:100',
-            'email' => 'required|string|email|max:50|unique:users,email',
-            'password' => $request->filled('password') ? 'min:6|confirmed': '',
+            'nama_pekerja' => 'sometimes|string|max:100',
+            'alamat_pekerja' => 'sometimes|string|max:100',
+            'password' => $request->filled('password') ? 'min:6|confirmed' : '',
         ]);
-
+        
         try {
-
             $pekerja = Pekerja::find($id);
             if (!$pekerja) {
                 return response()->json([
@@ -111,6 +109,7 @@ class PekerjaControllerApi extends Controller
                     'errors' => 'No pekerja found with the given id.'
                 ], 404);
             }
+        
             $user = User::find($pekerja->id_user);
             if (!$user) {
                 return response()->json([
@@ -118,6 +117,11 @@ class PekerjaControllerApi extends Controller
                     'message' => 'User not found.',
                 ], 404);
             }
+        
+            // Validasi email setelah mendapatkan id_user
+            $validated['email'] = $request->validate([
+                'email' => 'sometimes|string|email|max:50|unique:users,email,'.$pekerja->id_user.',id_user',
+            ])['email'] ?? $user->email;
           
             $user->email = $validated['email'];
             if (!empty($validated['password'])) {

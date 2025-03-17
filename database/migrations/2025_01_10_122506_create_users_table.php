@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id('id_user');
             $table->string('email', 50)->unique();
             $table->string('password', 100);
-            $table->enum('role', ['pemilik', 'pekerja']);
+            $table->enum('role', ['pemilik', 'pekerja','admin']);
+            $table->boolean('is_verified')->default(0);
             $table->timestamps();
         });
         Schema::create('sessions', function (Blueprint $table) {
