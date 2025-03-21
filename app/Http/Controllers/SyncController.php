@@ -30,23 +30,21 @@ class SyncController extends Controller
             ], 404);
         }
 
-        $toko = Toko::where('id_pemilik', $pemilik->id_pemilik)->with('pemilik')->get();
+        $toko = Toko::where('id_pemilik', $pemilik->id_pemilik)->get();
         return response()->json([
             'status' => 'success',
             'message' => 'Fetched all toko for pemilik.',
-            'data' => TokoResource::collection($toko)
+            'data' => $toko
         ], 200);
     }
 
     // ✅ GET - Ambil Data Produk dengan Filter Stok
-    public function getProduk($id, $bool)
+    public function getProduk()
     {
-        $produk = Produk::with(['toko', 'kategori'])
-                        ->where('id_toko', $id)
-                        ->when($bool === "true", function ($query) {
-                            return $query->where('is_stock_managed', 1);
-                        })
-                        ->get();
+        $pemilik = Auth::user()->pemilik; 
+        $produk = Produk::whereHas('toko', function ($query) use ($pemilik) {
+            $query->where('id_pemilik', $pemilik->id_pemilik);
+        })->get();
 
         if ($produk->isEmpty()) {
             return response()->json([
@@ -59,36 +57,48 @@ class SyncController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Produk found.',
-            'data' => ProdukResource::collection($produk)
+            'data' => $produk
         ], 200);
     }
 
     // ✅ GET - Ambil Data Kategori
-    public function getKategori(Request $request)
+    public function getKategori()
     {
-        $request->validate([
-            'id_toko' => 'required|exists:toko,id_toko'
-        ]);
+        $pemilik = Auth::user()->pemilik; 
+        $kategori = Kategori::whereHas('toko', function ($query) use ($pemilik) {
+            $query->where('id_pemilik', $pemilik->id_pemilik);
+        })->get();
 
-        $kategori = Kategori::where('id_toko', $request->id_toko)->get();
+        // $kategori = Kategori::where('id_toko', $request->id_toko)->get();
 
         return response()->json([
             'status' => 'success',
             'message' => 'Fetched all categories for the toko.',
-            'data' => KategoriResource::collection($kategori)
+            'data' => $kategori
         ], 200);
     }
 
     // ✅ GET - Ambil Data Transaksi yang Sudah Disinkronkan
-    public function getTransaksiPenjualan($id_toko)
+    public function getTransaksiPenjualan(Request $request)
     {
-        return response()->json(Transaksi::where("synced", 1)->where("id_toko", $id_toko)->get());
+        $request->validate([
+            'id_toko' => 'required|exists:toko,id_toko'
+        ]);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Fetched all categories for the toko.',
+            'data' => Transaksi::where("synced", 1)->where("id_toko", $request->id_toko)->get()
+        ], 200);
     }
 
     // ✅ GET - Ambil Detail Transaksi yang Sudah Disinkronkan
     public function getDetailTransaksiPenjualan()
     {
-        return response()->json(DetailTransaksi::where("synced", 1)->get());
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Fetched all categories for the toko.',
+            'data' => DetailTransaksi::where("synced", 1)->get()
+        ], 200);
     }
 
     // 🔄 POST - Sinkronisasi Transaksi ke Server

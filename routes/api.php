@@ -51,8 +51,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-toko', [SyncController::class, 'getToko']);
     Route::get('/get-produk', [SyncController::class, 'getProduk']);
     Route::get('/get-kategori', [SyncController::class, 'getKategori']);
-    Route::get('/get-transaksi_penjualan', [SyncController::class, 'getTransaksiPenjualan']);
-    Route::get('/get-detail_transaksi_penjualan', [SyncController::class, 'getDetailTransaksiPenjualan']);
+    Route::get('/get-transaksi-penjualan', [SyncController::class, 'getTransaksiPenjualan']);
+    Route::get('/get-detail-transaksi-penjualan', [SyncController::class, 'getDetailTransaksiPenjualan']);
 
     // 🔄 Rute untuk sinkronisasi data transaksi dari SQLite ke server
     Route::post('/sync-transaksi_penjualan', [SyncController::class, 'syncTransaksiPenjualan']);

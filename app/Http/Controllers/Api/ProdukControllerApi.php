@@ -33,11 +33,7 @@ class ProdukControllerApi extends Controller
 
             if ($request->hasFile('url_img')) {
                 $manager = new ImageManager(new Driver());
-
-                // Get the uploaded file
                 $file = $request->file('url_img');
-
-                // Create a unique filename for the image
                 $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
                 $imagePath = public_path('uploadfile/produk/' . $fileName);
                 $img = $manager->read($file);
