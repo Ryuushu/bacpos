@@ -119,7 +119,7 @@ class TransaksiPembelianControllerApi extends Controller
                     'id_transaksi_pembelian' => $idTransaksi,
                     'kode_produk' =>  $produk->kode_produk,
                     'harga' => $harga,
-                    'harga_beli' => $produk->harga_beli,
+                    'harga_beli' => $item['harga_beli'],
                     'qty' => $item['stok'],
                     'subtotal' => $subtotal,
                     'created_at' => now()->format('Y-m-d H:i:s'),

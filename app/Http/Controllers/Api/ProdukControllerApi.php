@@ -68,7 +68,7 @@ class ProdukControllerApi extends Controller
      */
     public function index()
     {
-        $produk = Produk::with(['toko', 'kategori'])->get();
+        $produk = Produk::with(['toko', 'kategori'])->orderBy('nama_produk','asc')->get();
         return response()->json([
             'status' => 'success',
             'message' => 'Fetched all products.',
@@ -82,9 +82,9 @@ class ProdukControllerApi extends Controller
     public function shows($id, $bool)
     {
         $bool == "true" ?
-            $produk = Produk::with(['toko', 'kategori'])->where('id_toko', $id)->where('is_stock_managed', 1)->get()
+            $produk = Produk::with(['toko', 'kategori'])->where('id_toko', $id)->where('is_stock_managed', 1)->orderBy('nama_produk','asc')->get()
             :
-            $produk = Produk::with(['toko', 'kategori'])->where('id_toko', $id)->get();
+            $produk = Produk::with(['toko', 'kategori'])->where('id_toko', $id)->orderBy('nama_produk','asc')->get();
 
         if (!$produk) {
             return response()->json([
