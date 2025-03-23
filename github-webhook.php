@@ -11,7 +11,7 @@ if (isset($data['ref']) && $data['ref'] === 'refs/heads/main') {
     // Simpan log
     file_put_contents("webhook.log", date('Y-m-d H:i:s') . "\n" . $output . "\n", FILE_APPEND);
 
-    echo "Git pull executed!";
+    echo "Git pull executed!s";
 } else {
     echo "Ignored.";
 }
