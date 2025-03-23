@@ -30,7 +30,11 @@ class TransaksiControllerApi extends Controller
             'jenis_pembayaran' => 'required',
             'ppn' => 'nullable',
             'bulatppn' => 'nullable',
+            'valuediskon' => 'nullable|numeric|min:0', // Validasi diskon
+            'tipediskon' => 'nullable|string|in:persen,nominal',
         ]);
+       
+
         // Generate ID transaksi
         $idTransaksi = 'TRX-' . $validated['id_toko'] . now()->format('dmYHis') . rand(1000, 9999);
 
@@ -49,26 +53,26 @@ class TransaksiControllerApi extends Controller
                 'jenis_pembayaran' => $validated['jenis_pembayaran'],
                 'ppn' => $validated['ppn'],
                 'bulatppn' => $validated['bulatppn'],
+                'valuediskon' => $validated['valuediskon'],
+                'tipediskon' => $validated['tipediskon'],
                 'created_at' => now()->format('Y-m-d H:i:s'),
             ]);
-
+        
             $totalHarga = 0;
+            $itemsDetails = [];
 
             // Loop setiap item untuk menghitung harga dan menyimpan detail transaksi
             foreach ($validated['items'] as $item) {
                 $produk = Produk::findOrFail($item['kode_produk']);
                 $harga = $produk->harga;
                 $subtotal = $harga * $item['qty'];
-
-                // Validasi ketersediaan stok produk jika is_stok_management true
+        
+                // Validasi stok jika is_stock_managed
                 if ($produk->is_stock_managed && $produk->stok < $item['qty']) {
-                    // Rollback transaksi jika stok tidak cukup
                     DB::rollBack();
-                    return response()->json([
-                        'message' => 'Stok produk ' . $produk->nama_produk . ' tidak cukup',
-                    ], 400);
+                    return response()->json(['message' => 'Stok produk ' . $produk->nama_produk . ' tidak cukup'], 400);
                 }
-
+        
                 // Simpan detail transaksi
                 DetailTransaksi::create([
                     'id_transaksi' => $idTransaksi,
@@ -78,9 +82,11 @@ class TransaksiControllerApi extends Controller
                     'subtotal' => $subtotal,
                     'created_at' => now()->format('Y-m-d H:i:s'),
                 ]);
-
+        
                 // Tambahkan subtotal ke total harga
                 $totalHarga += $subtotal;
+        
+                // Simpan detail untuk response
                 $itemsDetails[] = [
                     'kode_produk' => $item['kode_produk'],
                     'nama_produk' => $produk->nama_produk,
@@ -89,34 +95,34 @@ class TransaksiControllerApi extends Controller
                     'subtotal' => $subtotal,
                 ];
             }
-
-            foreach ($validated['items'] as $item) {
-                $produk = Produk::findOrFail($item['kode_produk']);
-                if ($produk->is_stock_managed) {
-                    $stokAwal = $produk->stok;
-                    $produk->decrement('stok', $item['qty']);
-                    $stokAkhir = $produk->stok;
-
-                    // Menambahkan ke tabel kartustok
-                    KartuStok::create([
-                        'kode_produk' => $item['kode_produk'],
-                        'jenis_transaksi' => 'keluar', // Karena ini pengurangan stok
-                        'tanggal' => now()->format('Y-m-d H:i:s'),
-                        'jumlah' => $item['qty'],
-                        'stok_awal' => $stokAwal,
-                        'stok_akhir' => $stokAkhir,
-                        'keterangan' => 'Transaksi Penjualan, ID Transaksi: ' . $idTransaksi,
-                    ]);
+        
+            // **Perhitungan Diskon**
+            $totalSetelahDiskon = $totalHarga;
+            if ($validated['valuediskon']) {
+                if ($validated['tipediskon'] === 'persen') {
+                    $diskon = ($validated['valuediskon'] / 100) * $totalHarga;
+                } else { // Nominal
+                    $diskon = $validated['valuediskon'];
                 }
+                $totalSetelahDiskon -= $diskon;
+            } else {
+                $diskon = 0;
             }
-
-            $ppnValue = isset($validated['ppn']) ? $validated['ppn'] : 0; // Default ke 0 jika null
-            $calculatedPpnAmount = ($ppnValue / 100) * $totalHarga;
-            $calculatedTotalAkhir = $totalHarga + $calculatedPpnAmount;
-          
+        
+            // **Perhitungan PPN**
+            $ppnValue = $validated['ppn'] ?? 0;
+            $ppnAmount = ($ppnValue / 100) * $totalSetelahDiskon;
+        
+            // **Total Akhir**
+            $calculatedTotalAkhir = $totalSetelahDiskon + $ppnAmount;
+        
+            // **Hitung Kembalian**
+            $kembalian = $validated['bayar'] - $calculatedTotalAkhir;
+        
+            // **Update Total Harga di Transaksi**
             $transaksi->update([
                 'totalharga' => $calculatedTotalAkhir,
-                'kembalian' => $validated['bayar'] - $calculatedTotalAkhir,
+                'kembalian' => $kembalian,
             ]);
 
 

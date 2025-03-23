@@ -21,6 +21,7 @@ Route::post('verify-otp', [AuthControllerApi::class, 'verifyOtp']);
 Route::post('forgot-password', [AuthControllerApi::class, 'forgotPassword']);
 Route::post('reset-password', [AuthControllerApi::class, 'resetPassword']);
 Route::get('laporanpenjualan/export/{type}/{idtoko}', [LaporanControllerApi::class, 'exportLaporanPenjualan']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthControllerApi::class, 'logout']);
     Route::get('listtokopemilik', [DashboardControllerApi::class, 'listtokobypemilik']);

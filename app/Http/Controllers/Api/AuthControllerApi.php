@@ -78,7 +78,6 @@ class AuthControllerApi extends Controller
             'identifier' => 'required|string', // Bisa email, nama pekerja, atau nama pemilik
             'password' => 'required|string|min:6',
         ]);
-
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
@@ -86,7 +85,6 @@ class AuthControllerApi extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
         $user = User::where('email', strtolower(trim($request->identifier)))
             ->orWhereHas('pekerja', function ($query) use ($request) {
                 $query->where('nama_pekerja', trim($request->identifier));
@@ -95,7 +93,6 @@ class AuthControllerApi extends Controller
                 $query->where('nama_pemilik', trim($request->identifier));
             })
             ->first();
-
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'status' => 'error',
@@ -114,13 +111,9 @@ class AuthControllerApi extends Controller
                 'message' => $user->is_verified
             ], 403);
         }
-
-
         $token = $user->createToken('mobpos')->plainTextToken;
-
         $pekerja = $user->pekerja;
         $pemilik = $user->pemilik;
-
         return response()->json([
             'status' => 'success',
             'message' => 'Login successful',
