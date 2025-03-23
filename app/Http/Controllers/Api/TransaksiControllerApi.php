@@ -33,7 +33,7 @@ class TransaksiControllerApi extends Controller
             'valuediskon' => 'nullable|numeric|min:0', // Validasi diskon
             'tipediskon' => 'nullable|string|in:persen,nominal',
         ]);
-       
+
 
         // Generate ID transaksi
         $idTransaksi = 'TRX-' . $validated['id_toko'] . now()->format('dmYHis') . rand(1000, 9999);
@@ -57,7 +57,7 @@ class TransaksiControllerApi extends Controller
                 'tipediskon' => $validated['tipediskon'],
                 'created_at' => now()->format('Y-m-d H:i:s'),
             ]);
-        
+
             $totalHarga = 0;
             $itemsDetails = [];
 
@@ -66,13 +66,13 @@ class TransaksiControllerApi extends Controller
                 $produk = Produk::findOrFail($item['kode_produk']);
                 $harga = $produk->harga;
                 $subtotal = $harga * $item['qty'];
-        
+
                 // Validasi stok jika is_stock_managed
                 if ($produk->is_stock_managed && $produk->stok < $item['qty']) {
                     DB::rollBack();
                     return response()->json(['message' => 'Stok produk ' . $produk->nama_produk . ' tidak cukup'], 400);
                 }
-        
+
                 // Simpan detail transaksi
                 DetailTransaksi::create([
                     'id_transaksi' => $idTransaksi,
@@ -82,10 +82,10 @@ class TransaksiControllerApi extends Controller
                     'subtotal' => $subtotal,
                     'created_at' => now()->format('Y-m-d H:i:s'),
                 ]);
-        
+
                 // Tambahkan subtotal ke total harga
                 $totalHarga += $subtotal;
-        
+
                 // Simpan detail untuk response
                 $itemsDetails[] = [
                     'kode_produk' => $item['kode_produk'],
@@ -95,12 +95,17 @@ class TransaksiControllerApi extends Controller
                     'subtotal' => $subtotal,
                 ];
             }
-        
-            // **Perhitungan Diskon**
-            $totalSetelahDiskon = $totalHarga;
-            if ($validated['valuediskon']) {
+
+            // **Perhitungan PPN terlebih dahulu**
+            $ppnValue = $validated['ppn'] ?? 0;
+            $ppnAmount = ($ppnValue / 100) * $totalHarga;
+            $totalSetelahPPN = $totalHarga + $ppnAmount;
+
+            // **Perhitungan Diskon setelah PPN**
+            $totalSetelahDiskon = $totalSetelahPPN;
+            if (!empty($validated['valuediskon'])) {
                 if ($validated['tipediskon'] === 'persen') {
-                    $diskon = ($validated['valuediskon'] / 100) * $totalHarga;
+                    $diskon = ($validated['valuediskon'] / 100) * $totalSetelahPPN;
                 } else { // Nominal
                     $diskon = $validated['valuediskon'];
                 }
@@ -108,17 +113,13 @@ class TransaksiControllerApi extends Controller
             } else {
                 $diskon = 0;
             }
-        
-            // **Perhitungan PPN**
-            $ppnValue = $validated['ppn'] ?? 0;
-            $ppnAmount = ($ppnValue / 100) * $totalSetelahDiskon;
-        
+
             // **Total Akhir**
-            $calculatedTotalAkhir = $totalSetelahDiskon + $ppnAmount;
-        
+            $calculatedTotalAkhir = $totalSetelahDiskon;
+
             // **Hitung Kembalian**
             $kembalian = $validated['bayar'] - $calculatedTotalAkhir;
-        
+
             // **Update Total Harga di Transaksi**
             $transaksi->update([
                 'totalharga' => $calculatedTotalAkhir,
@@ -160,9 +161,9 @@ class TransaksiControllerApi extends Controller
             return response()->json([
                 'message' => 'Checkout berhasil',
                 'id_transaksi' => $idTransaksi,
-                'subtotal'=>$totalHarga,
-                'ppn'=>$validated["ppn"],
-                'bulatppn'=>$validated["bulatppn"],
+                'subtotal' => $totalHarga,
+                'ppn' => $validated["ppn"],
+                'bulatppn' => $validated["bulatppn"],
                 'totalharga' => $calculatedTotalAkhir,
                 'pembayaran' => $validated['bayar'],
                 'jenis_pembayaran' => $transaksi->jenis_pembayaran,
@@ -186,46 +187,45 @@ class TransaksiControllerApi extends Controller
         }
     }
     public function riwayat($id_toko, Request $request)
-{
-    // Validasi parameter StartDate dan EndDate
-    $validated = $request->validate([
-        'start_date' => 'nullable|date|before_or_equal:end_date',
-        'end_date' => 'nullable|date|after_or_equal:start_date',
-    ]);
+    {
+        // Validasi parameter StartDate dan EndDate
+        $validated = $request->validate([
+            'start_date' => 'nullable|date|before_or_equal:end_date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
 
-    // Ambil parameter StartDate dan EndDate dari request
-    $startDate = $validated['start_date'] ?? Carbon::now()->toDateString();
-    $endDate = $validated['end_date'] ?? Carbon::now()->toDateString();
+        // Ambil parameter StartDate dan EndDate dari request
+        $startDate = $validated['start_date'] ?? Carbon::now()->toDateString();
+        $endDate = $validated['end_date'] ?? Carbon::now()->toDateString();
 
-    // Query transaksi dengan filter tanggal jika diberikan
-    $transaksiQuery = Transaksi::with('toko', 'user.pekerja', 'user.pemilik', 'detailTransaksi.produk')
-        ->where('id_toko', $id_toko)
-        ->whereBetween('created_at', [
-            $startDate . ' 00:00:00',
-            $endDate . ' 23:59:59'
-        ])
-        ->orderBy('created_at', 'desc'); // Urutkan dari terbaru ke terlama
+        // Query transaksi dengan filter tanggal jika diberikan
+        $transaksiQuery = Transaksi::with('toko', 'user.pekerja', 'user.pemilik', 'detailTransaksi.produk')
+            ->where('id_toko', $id_toko)
+            ->whereBetween('created_at', [
+                $startDate . ' 00:00:00',
+                $endDate . ' 23:59:59'
+            ])
+            ->orderBy('created_at', 'desc'); // Urutkan dari terbaru ke terlama
 
-    $transaksi = $transaksiQuery->get();
+        $transaksi = $transaksiQuery->get();
 
-    // Mengelompokkan transaksi berdasarkan tanggal (urut dari terbaru)
-    $transaksiGrouped = $transaksi->groupBy(function ($item) {
-        return Carbon::parse($item->created_at)->format('Y-m-d');
-    })->sortKeysDesc(); // Mengurutkan tanggal dari terbaru ke terlama
+        // Mengelompokkan transaksi berdasarkan tanggal (urut dari terbaru)
+        $transaksiGrouped = $transaksi->groupBy(function ($item) {
+            return Carbon::parse($item->created_at)->format('Y-m-d');
+        })->sortKeysDesc(); // Mengurutkan tanggal dari terbaru ke terlama
 
-    // Menambahkan total per grup
-    $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
-        $total = $group->sum('totalharga');
-        return [
-            'total' => $total,
-            'data' => $group,
-        ];
-    });
+        // Menambahkan total per grup
+        $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
+            $total = $group->sum('totalharga');
+            return [
+                'total' => $total,
+                'data' => $group,
+            ];
+        });
 
-    return response()->json([
-        'message' => 'Data transaksi berhasil diambil',
-        'data' => $transaksiWithSum,
-    ]);
-}
-
+        return response()->json([
+            'message' => 'Data transaksi berhasil diambil',
+            'data' => $transaksiWithSum,
+        ]);
+    }
 }
