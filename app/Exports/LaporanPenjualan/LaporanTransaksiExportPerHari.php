@@ -57,6 +57,9 @@ class LaporanTransaksiPerHariExport implements FromCollection, WithHeadings, Wit
                 'nama' => $data->user->pemilik != null ? $data->user->pemilik->nama_pemilik : $data->user->pekerja->nama_pekerja,
                 'created_at' => date('Y-m-d H:i:s', strtotime($data->created_at)),
                 'ppn' => $data->ppn,
+                'bulatppn' => $data->bulatppn,
+                'valuediskon' => $data->valuediskon,
+                'tipediskon' => $data->tipediskon,
                 'totalharga' => $data->totalharga,
                 'pembayaran' => $data->pembayaran,
                 'kembalian' => $data->kembalian == 0 ? '0' : $data->kembalian,
@@ -68,6 +71,9 @@ class LaporanTransaksiPerHariExport implements FromCollection, WithHeadings, Wit
             'nama' => "",
             'created_at' => "",
             'ppn' => "",
+            'bulatppn' => "",
+            'valuediskon' =>"",
+            'tipediskon' => "",
             'totalharga' =>  "",
             'pembayaran' => "",
             'kembalian' => "",
@@ -78,6 +84,9 @@ class LaporanTransaksiPerHariExport implements FromCollection, WithHeadings, Wit
             'nama' => "",
             'created_at' => "",
             'ppn' => "",
+            'bulatppn' => "",
+            'valuediskon' =>"",
+            'tipediskon' => "",
             'totalharga' =>  $totalHarga,
             'pembayaran' => $totalPembayan,
             'kembalian' => "",
@@ -102,6 +111,9 @@ class LaporanTransaksiPerHariExport implements FromCollection, WithHeadings, Wit
             'Nama Kasir',
             'Waktu Transaksi',
             'Ppn',
+            'Nominal Ppn',
+            'Diskon',
+            'Tipe Diskon',
             'Total Harga',
             'Pembayaran',
             'Kembalian',
@@ -151,9 +163,9 @@ class LaporanDetailTransaksiExport implements FromCollection, WithHeadings, With
     public function collection()
     {
         $table = DetailTransaksi::with('transaksi.user.pekerja', 'transaksi.user.pemilik')->join("transaksi_penjualan", "detail_transaksi_penjualan.id_transaksi", "transaksi_penjualan.id_transaksi")
-        ->where('transaksi_penjualan.id_toko', $this->idtoko)
-        ->whereDate('detail_transaksi_penjualan.created_at', Carbon::today())
-        ->get();
+            ->where('transaksi_penjualan.id_toko', $this->idtoko)
+            ->whereDate('detail_transaksi_penjualan.created_at', Carbon::today())
+            ->get();
         $data = $table->map(function ($data) {
             return [
                 'id_transaksi' => $data->id_transaksi,

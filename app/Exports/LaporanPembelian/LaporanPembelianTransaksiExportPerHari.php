@@ -87,7 +87,7 @@ class LaporanTransaksiPerHariExport implements FromCollection, WithHeadings, Wit
             'ID Transaksi',
             'Nama Kasir',
             'Waktu Transaksi',
-            'Total Harga',
+            'Total Harga Beli',
         ];
     }
     public function columnFormats(): array
@@ -143,6 +143,7 @@ class LaporanDetailTransaksiExport implements FromCollection, WithHeadings, With
                 'namaproduk' => $data->produk->nama_produk,
                 'qty' => $data->qty,
                 'hargabeli' => $data->harga_beli,
+                'subtotal' => $data->subtotal,
                 'harga' => $data->harga,
                 'created_at' => date('Y-m-d H:i:s', strtotime($data->created_at)),
             ];
@@ -163,6 +164,7 @@ class LaporanDetailTransaksiExport implements FromCollection, WithHeadings, With
             'Nama Produk',
             'Qty',
             'Harga Beli',
+            'Subtotal',
             'Harga Jual',
             'Waktu Transaksi',
         ];

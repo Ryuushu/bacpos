@@ -82,7 +82,7 @@ class TransaksiSheet implements FromCollection, WithHeadings, WithTitle
             'ID Transaksi',
             'Nama Kasir',
             'Waktu Transaksi',
-            'Total Harga',
+            'Total Harga Beli',
         ];
     }
 }
@@ -111,6 +111,7 @@ class DetailTransaksiSheet implements FromCollection, WithHeadings, WithTitle
                 'namaproduk' => $data->produk->nama_produk,
                 'qty' => $data->qty,
                 'hargabeli' => $data->harga_beli,
+                'subtotal' => $data->subtotal,
                 'harga' => $data->harga,
                 'created_at' => date('Y-m-d H:i:s', strtotime($data->created_at)),
             ];
@@ -135,6 +136,7 @@ class DetailTransaksiSheet implements FromCollection, WithHeadings, WithTitle
             'Nama Produk',
             'Qty',
             'Harga Beli',
+            'Subtotal',
             'Harga Jual',
             'Waktu Transaksi',
         ];

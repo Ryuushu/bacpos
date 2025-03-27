@@ -78,7 +78,7 @@ class TransaksiPembelianControllerApi extends Controller
                         'id_toko' =>  $validated['id_toko'],
                         'harga' => $item['harga'],
                         'stok' => $item['stok'],
-                        'harga_beli'=>$item['harga_beli'],
+                        'harga_beli' => $item['harga_beli'],
                         'is_stock_managed' => 1,
                         'kode_kategori' => $item['id_kategori'],
                         'url_img' => $imagePath
@@ -100,6 +100,7 @@ class TransaksiPembelianControllerApi extends Controller
                     $stokAwal = $produk->stok;
                     $stokAkhir = $produk->stok + $item['stok'];
                     $produk->stok = $stokAkhir;
+                    $produk->harga_beli = $item['harga_beli'] ?? $produk->harga_beli;
                     $produk->save();
                     // Menambahkan ke tabel kartustok
                     KartuStok::create([
@@ -112,9 +113,10 @@ class TransaksiPembelianControllerApi extends Controller
                         'keterangan' => 'Transaksi Pembelian, ID Transaksi: ' . $idTransaksi,
                     ]);
                 }
+
                 $harga = $produk->harga;
                 $subtotal = $harga * $item['stok'];
-                
+                $totlhargabeli = $produk->harga_beli* $item['stok'];
                 DetailTransaksiPembelian::create([
                     'id_transaksi_pembelian' => $idTransaksi,
                     'kode_produk' =>  $produk->kode_produk,
@@ -124,7 +126,7 @@ class TransaksiPembelianControllerApi extends Controller
                     'subtotal' => $subtotal,
                     'created_at' => now()->format('Y-m-d H:i:s'),
                 ]);
-                $totalHarga += $produk->harga;
+                $totalHarga += $totlhargabeli;
             }
 
             $transaksi->update([
@@ -156,11 +158,11 @@ class TransaksiPembelianControllerApi extends Controller
             'start_date' => 'nullable|date|before_or_equal:end_date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
-    
+
         // Ambil parameter StartDate dan EndDate dari request
         $startDate = $validated['start_date'] ?? Carbon::now()->toDateString();
         $endDate = $validated['end_date'] ?? Carbon::now()->toDateString();
-    
+
         // Query transaksi dengan filter tanggal jika diberikan
         $transaksiQuery = TransaksiPembelian::with('toko', 'user.pemilik', 'detailTransaksiPembelian.produk')
             ->where('id_toko', $id_toko)
@@ -169,14 +171,14 @@ class TransaksiPembelianControllerApi extends Controller
                 $endDate . ' 23:59:59'
             ])
             ->orderBy('created_at', 'desc'); // Urutkan dari terbaru ke terlama
-    
+
         $transaksi = $transaksiQuery->get();
-    
+
         // Mengelompokkan transaksi berdasarkan tanggal (urut dari terbaru)
         $transaksiGrouped = $transaksi->groupBy(function ($item) {
             return Carbon::parse($item->created_at)->format('Y-m-d');
         })->sortKeysDesc(); // Mengurutkan tanggal dari terbaru ke terlama
-    
+
         // Menambahkan total per grup
         $transaksiWithSum = $transaksiGrouped->map(function (Collection $group) {
             $total = $group->sum('totalharga');
@@ -185,11 +187,10 @@ class TransaksiPembelianControllerApi extends Controller
                 'data' => $group,
             ];
         });
-    
+
         return response()->json([
             'message' => 'Data transaksi berhasil diambil',
             'data' => $transaksiWithSum,
         ]);
     }
-    
 }

@@ -40,7 +40,7 @@ class LaporanPembelianTransaksiExportPerTahun implements FromCollection, WithHea
         return [
             'Bulan',
             'Total Transaksi',
-            'Total Harga',
+            'Total Harga Beli',
         ];
     }
 }

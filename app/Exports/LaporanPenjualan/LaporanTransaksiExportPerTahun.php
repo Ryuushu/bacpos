@@ -39,7 +39,7 @@ class LaporanTransaksiExportPerTahun implements FromCollection, WithHeadings
         return [
             'Bulan',
             'Total Transaksi',
-            'Total Harga',
+            'Total Harga Jual',
         ];
     }
 }

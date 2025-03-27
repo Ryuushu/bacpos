@@ -19,9 +19,8 @@ class TransaksiControllerApi extends Controller
 {
     public function store(Request $request)
     {
-        // Validasi input
         $validated = $request->validate([
-            'id_toko' => 'required|integer|exists:toko,id_toko', // Pastikan id_toko ada di tabel tokos
+            'id_toko' => 'required|integer|exists:toko,id_toko',
             'id_user' => 'required|integer|exists:users,id_user',
             'items' => 'required|array',
             'items.*.kode_produk' => 'required|integer|exists:produk,kode_produk',
@@ -30,19 +29,14 @@ class TransaksiControllerApi extends Controller
             'jenis_pembayaran' => 'required',
             'ppn' => 'nullable',
             'bulatppn' => 'nullable',
-            'valuediskon' => 'nullable|numeric|min:0', // Validasi diskon
+            'valuediskon' => 'nullable|numeric|min:0',
             'tipediskon' => 'nullable|string|in:persen,nominal',
         ]);
-
-
-        // Generate ID transaksi
+    
         $idTransaksi = 'TRX-' . $validated['id_toko'] . now()->format('dmYHis') . rand(1000, 9999);
-
-        // Mulai transaksi database
         DB::beginTransaction();
-
+    
         try {
-            // Simpan data transaksi
             $transaksi = Transaksi::create([
                 'id_transaksi' => $idTransaksi,
                 'id_toko' => $validated['id_toko'],
@@ -55,38 +49,32 @@ class TransaksiControllerApi extends Controller
                 'bulatppn' => $validated['bulatppn'],
                 'valuediskon' => $validated['valuediskon'],
                 'tipediskon' => $validated['tipediskon'],
-                'created_at' => now()->format('Y-m-d H:i:s'),
+                'created_at' => now(),
             ]);
-
+    
             $totalHarga = 0;
             $itemsDetails = [];
-
-            // Loop setiap item untuk menghitung harga dan menyimpan detail transaksi
+    
             foreach ($validated['items'] as $item) {
                 $produk = Produk::findOrFail($item['kode_produk']);
                 $harga = $produk->harga;
                 $subtotal = $harga * $item['qty'];
-
-                // Validasi stok jika is_stock_managed
+    
                 if ($produk->is_stock_managed && $produk->stok < $item['qty']) {
                     DB::rollBack();
                     return response()->json(['message' => 'Stok produk ' . $produk->nama_produk . ' tidak cukup'], 400);
                 }
-
-                // Simpan detail transaksi
+    
                 DetailTransaksi::create([
                     'id_transaksi' => $idTransaksi,
                     'kode_produk' => $item['kode_produk'],
                     'harga' => $harga,
                     'qty' => $item['qty'],
                     'subtotal' => $subtotal,
-                    'created_at' => now()->format('Y-m-d H:i:s'),
+                    'created_at' => now(),
                 ]);
-
-                // Tambahkan subtotal ke total harga
+    
                 $totalHarga += $subtotal;
-
-                // Simpan detail untuk response
                 $itemsDetails[] = [
                     'kode_produk' => $item['kode_produk'],
                     'nama_produk' => $produk->nama_produk,
@@ -95,95 +83,83 @@ class TransaksiControllerApi extends Controller
                     'subtotal' => $subtotal,
                 ];
             }
-
-            // **Perhitungan PPN terlebih dahulu**
-            $ppnValue = $validated['ppn'] ?? 0;
-            $ppnAmount = ($ppnValue / 100) * $totalHarga;
-            $totalSetelahPPN = $totalHarga + $ppnAmount;
-
-            // **Perhitungan Diskon setelah PPN**
-            $totalSetelahDiskon = $totalSetelahPPN;
-            if (!empty($validated['valuediskon'])) {
-                if ($validated['tipediskon'] === 'persen') {
-                    $diskon = ($validated['valuediskon'] / 100) * $totalSetelahPPN;
-                } else { // Nominal
-                    $diskon = $validated['valuediskon'];
+    
+            foreach ($validated['items'] as $item) {
+                $produk = Produk::findOrFail($item['kode_produk']);
+                if ($produk->is_stock_managed) {
+                    $stokAwal = $produk->stok;
+                    $produk->decrement('stok', $item['qty']);
+    
+                    KartuStok::create([
+                        'kode_produk' => $item['kode_produk'],
+                        'jenis_transaksi' => 'keluar',
+                        'tanggal' => now(),
+                        'jumlah' => $item['qty'],
+                        'stok_awal' => $stokAwal,
+                        'stok_akhir' => $produk->stok,
+                        'keterangan' => 'Transaksi Penjualan, ID Transaksi: ' . $idTransaksi,
+                    ]);
                 }
-                $totalSetelahDiskon -= $diskon;
-            } else {
-                $diskon = 0;
             }
-
-            // **Total Akhir**
-            $calculatedTotalAkhir = $totalSetelahDiskon;
-
-            // **Hitung Kembalian**
+    
+            $ppnAmount = ($validated['ppn'] ?? 0) / 100 * $totalHarga;
+            $totalSetelahPPN = $totalHarga + $ppnAmount;
+            
+            $diskon = 0;
+            if (!empty($validated['valuediskon'])) {
+                $diskon = ($validated['tipediskon'] === 'persen') ? ($validated['valuediskon'] / 100 * $totalSetelahPPN) : $validated['valuediskon'];
+            }
+            
+            $calculatedTotalAkhir = $totalSetelahPPN - $diskon;
             $kembalian = $validated['bayar'] - $calculatedTotalAkhir;
-
-            // **Update Total Harga di Transaksi**
+    
             $transaksi->update([
                 'totalharga' => $calculatedTotalAkhir,
                 'kembalian' => $kembalian,
             ]);
-
-
+    
             $user = User::with(['pekerja', 'pemilik'])->find($validated['id_user']);
             $toko = Toko::find($validated['id_toko']);
-
-
+    
             $userInfo = [
                 'id_user' => $user->id_user,
                 'nama' => $user->pekerja ? $user->pekerja->nama_pekerja : ($user->pemilik ? $user->pemilik->nama_pemilik : null),
                 'posisi' => $user->pekerja ? "pekerja" : 'Pemilik',
             ];
-            if ($toko->url_img) {
-                $path = public_path($toko->url_img);
-
-                if (file_exists($path)) {
-                    $imageData = base64_encode(file_get_contents($path));
-                    $mimeType = mime_content_type($path);
-                    $base64Image = $imageData;
-                }
-            }
+    
             $tokoInfo = $toko ? [
                 'id_toko' => $toko->id_toko,
                 'nama_toko' => $toko->nama_toko,
                 'alamat_toko' => $toko->alamat_toko,
                 'whatsapp' => $toko->whatsapp,
                 'instagram' => $toko->instagram,
-                'img' => $toko->url_img != null ? $base64Image : null,
-                'mime' => $toko->url_img != null ? $mimeType : null
+                'img' => $toko->url_img ? base64_encode(file_get_contents(public_path($toko->url_img))) : null,
+                'mime' => $toko->url_img ? mime_content_type(public_path($toko->url_img)) : null,
             ] : null;
-
-            // Commit transaksi jika semua berhasil
+    
             DB::commit();
-
+    
             return response()->json([
                 'message' => 'Checkout berhasil',
                 'id_transaksi' => $idTransaksi,
                 'subtotal' => $totalHarga,
-                'ppn' => $validated["ppn"],
-                'bulatppn' => $validated["bulatppn"],
+                'ppn' => $validated['ppn'],
+                'bulatppn' => $validated['bulatppn'],
+                'valuediskon' => $validated['valuediskon'],
+                'tipediskon' => $validated['tipediskon'],
                 'totalharga' => $calculatedTotalAkhir,
                 'pembayaran' => $validated['bayar'],
                 'jenis_pembayaran' => $transaksi->jenis_pembayaran,
-                'kembalian' => $transaksi->kembalian,
+                'kembalian' => $kembalian,
                 'created_at' => $transaksi->created_at,
                 'user' => $userInfo,
                 'toko' => $tokoInfo,
                 'items' => $itemsDetails,
             ]);
         } catch (\Exception $e) {
-            Log::error('Transaksi gagal: ' . $e->getMessage(), [
-                'exception' => $e,
-                'user_id' => auth()->id_user ?? null, // Opsional, simpan ID user jika ada
-            ]);
-            // Rollback transaksi jika terjadi error
+            Log::error('Transaksi gagal: ' . $e->getMessage(), ['exception' => $e, 'user_id' => auth()->id_user ?? null]);
             DB::rollBack();
-            return response()->json([
-                'message' => 'Terjadi kesalahan, transaksi dibatalkan.',
-                'error' => $e->getMessage(),
-            ], 500);
+            return response()->json(['message' => 'Terjadi kesalahan, transaksi dibatalkan.', 'error' => $e->getMessage()], 500);
         }
     }
     public function riwayat($id_toko, Request $request)
