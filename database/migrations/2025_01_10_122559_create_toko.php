@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('whatsapp', 15)->nullable();
             $table->string('instagram', 100)->nullable();
             $table->string('url_img')->nullable();
+            $table->boolean('is_verified')->default(0);
             $table->timestamps();
         });
     }

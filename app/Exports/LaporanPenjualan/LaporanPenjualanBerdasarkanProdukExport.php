@@ -26,7 +26,7 @@ class LaporanPenjualanBerdasarkanProdukExport implements FromCollection, WithHea
     {
         return DetailTransaksi::join("transaksi_penjualan", "detail_transaksi_penjualan.id_transaksi", "=", "transaksi_penjualan.id_transaksi")
             ->join("produk", "detail_transaksi_penjualan.kode_produk", "=", "produk.kode_produk") 
-            ->whereBetween('created_at', [$this->start_date, $this->end_date])// Join ke tabel produk untuk mendapatkan nama_produk
+            ->whereBetween('transaksi_penjualan.created_at', [$this->start_date, $this->end_date])// Join ke tabel produk untuk mendapatkan nama_produk
             ->where("transaksi_penjualan.id_toko", $this->idtoko)
             ->selectRaw("produk.nama_produk, 
                 SUM(detail_transaksi_penjualan.subtotal) as total_harga,

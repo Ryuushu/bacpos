@@ -45,7 +45,7 @@
                         <tr class="border border-gray-300 dark:border-gray-700">
                             <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-gray-800 dark:text-gray-200">{{ $item->nama_pemilik }}</td>
                             <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-gray-800 dark:text-gray-200">{{ $item->user->email }}</td>
-                            <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-center">
+                            <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-center text-light">
                                 <button
                                     onclick="openModaledit(this)"
                                     data-id="{{ $item->id }}"
@@ -53,7 +53,8 @@
                                     data-email="{{ $item->user->email }}"
                                     data-is_verified="{{ $item->user->is_verified }}"
                                     class="text-yellow-500">Ubah
-                                </button>
+                                </button> | <a class="text-green-600 dark:text-green-400" href="{{ route('toko.index',$item->id_pemilik) }}">Toko
+                                </a>
                             </td>
                         </tr>
                         @endforeach
@@ -209,7 +210,7 @@
             document.getElementById("email").value = email;
             document.getElementById("nama_pemilik").value = nama;
             document.getElementById("is_verified").value = isVerified;
-            
+
             // Tampilkan modal edit
             document.getElementById("editUserModal").classList.remove("hidden");
         }

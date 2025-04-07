@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Pelanggan;
 use App\Models\Pemilik;
+use App\Models\Toko;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -64,5 +65,21 @@ class AdminController extends Controller
 
             return view('dashboard')->with('success', 'Pemilik berhasil ditambahkan.');
        
+    }
+    public function toko($id)
+    {
+        $pemilik = Pemilik::where('id_pemilik',$id)->with('user')->first();
+        $toko = Toko::where('id_pemilik',$id)->orderBy('is_verified',"asc")->get(); // Hitung total pelanggan
+        return view('pages/toko', compact('toko','pemilik'));
+    }
+    public function ubahVerifikasi(Request $request,$id){
+        $toko = Toko::findOrFail($id);
+        $toko->is_verified = $request->input('is_verified') == 1 ? 1 : 0;
+        $toko->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status verifikasi berhasil diperbarui.'
+        ]);
     }
 }

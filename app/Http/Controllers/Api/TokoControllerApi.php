@@ -29,7 +29,7 @@ class TokoControllerApi extends Controller
             ], 404);
         }
 
-        $toko = Toko::where('id_pemilik', $pemilik->id_pemilik)->with('pemilik')->get();
+        $toko = Toko::where('id_pemilik', $pemilik->id_pemilik)->where('is_verified',1)->with('pemilik')->get();
         return response()->json([
             'status' => 'success',
             'message' => 'Fetched all toko for pemilik.',

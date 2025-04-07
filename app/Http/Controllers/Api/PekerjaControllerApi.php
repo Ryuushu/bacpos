@@ -30,6 +30,7 @@ class PekerjaControllerApi extends Controller
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'role' => 'pekerja',
+                'created_at' =>1
             ]);
             $pekerja = Pekerja::create([
                 'id_toko' => $request->id_toko,

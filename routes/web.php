@@ -19,6 +19,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/user/{id}/edit', [ProfileController::class, 'edit'])->name('user.edit');
     Route::get('/pelanggan/search', [AdminController::class, 'search'])->name('pemilik.search');
     Route::post('/pelanggan/add', [AdminController::class, 'create'])->name('pemilik.add');
+    Route::get('/toko-client/{id}', [AdminController::class, 'toko'])->name('toko.index');
+    Route::post('/toko/ubah-verifikasi/{id}', [AdminController::class, 'ubahVerifikasi'])->name('toko.ubahVerifikasi');
+
 
 });
 
