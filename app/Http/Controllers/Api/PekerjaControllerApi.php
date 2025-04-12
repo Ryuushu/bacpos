@@ -30,7 +30,7 @@ class PekerjaControllerApi extends Controller
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'role' => 'pekerja',
-                'created_at' =>1
+                'is_verified' => 1
             ]);
             $pekerja = Pekerja::create([
                 'id_toko' => $request->id_toko,
@@ -71,7 +71,7 @@ class PekerjaControllerApi extends Controller
      */
     public function show($id)
     {
-        $pekerja = Pekerja::with(['user'])->where('id_toko',$id)->get();
+        $pekerja = Pekerja::with(['user'])->where('id_toko', $id)->get();
 
         if (!$pekerja) {
             return response()->json([
@@ -93,14 +93,14 @@ class PekerjaControllerApi extends Controller
      */
     public function update(Request $request, $id)
     {
-       
+
         $validated = $request->validate([
             'id_toko' => 'required|exists:toko,id_toko',
             'nama_pekerja' => 'sometimes|string|max:100',
             'alamat_pekerja' => 'sometimes|string|max:100',
             'password' => $request->filled('password') ? 'min:6|confirmed' : '',
         ]);
-        
+
         try {
             $pekerja = Pekerja::find($id);
             if (!$pekerja) {
@@ -110,7 +110,7 @@ class PekerjaControllerApi extends Controller
                     'errors' => 'No pekerja found with the given id.'
                 ], 404);
             }
-        
+
             $user = User::find($pekerja->id_user);
             if (!$user) {
                 return response()->json([
@@ -118,12 +118,12 @@ class PekerjaControllerApi extends Controller
                     'message' => 'User not found.',
                 ], 404);
             }
-        
+
             // Validasi email setelah mendapatkan id_user
             $validated['email'] = $request->validate([
-                'email' => 'sometimes|string|email|max:50|unique:users,email,'.$pekerja->id_user.',id_user',
+                'email' => 'sometimes|string|email|max:50|unique:users,email,' . $pekerja->id_user . ',id_user',
             ])['email'] ?? $user->email;
-          
+
             $user->email = $validated['email'];
             if (!empty($validated['password'])) {
                 $user->password = Hash::make($validated['password']);
