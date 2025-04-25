@@ -154,7 +154,30 @@ class TransaksiControllerApi extends Controller
                 'created_at' => $transaksi->created_at,
                 'user' => $userInfo,
                 'toko' => $tokoInfo,
-                'detail_transaksi' => $itemsDetails,
+                'detail_transaksi' => $transaksi->detailTransaksi->map(function ($detail) {
+                    return [
+                        'id' => $detail->id,
+                        'id_transaksi' => $detail->id_transaksi,
+                        'kode_produk' => $detail->kode_produk,
+                        'qty' => $detail->qty,
+                        'harga' => $detail->harga,
+                        'subtotal' => $detail->subtotal,
+                        'created_at' => $detail->created_at,
+                        'produk' => [
+                            'kode_produk' => $detail->produk->kode_produk,
+                            'nama_produk' => $detail->produk->nama_produk,
+                            'harga' => $detail->produk->harga,
+                            'harga_beli' => $detail->produk->harga_beli,
+                            'stok' => $detail->produk->stok,
+                            'id_toko' => $detail->produk->id_toko,
+                            'kode_kategori' => $detail->produk->kode_kategori,
+                            'is_stock_managed' => $detail->produk->is_stock_managed,
+                            'url_img' => $detail->produk->url_img,
+                            'created_at' => $detail->produk->created_at,
+                            'updated_at' => $detail->produk->updated_at,
+                        ],
+                    ];
+                }),
             ]);
         } catch (\Exception $e) {
             Log::error('Transaksi gagal: ' . $e->getMessage(), ['exception' => $e, 'user_id' => auth()->id_user ?? null]);
