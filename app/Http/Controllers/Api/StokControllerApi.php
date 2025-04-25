@@ -8,11 +8,8 @@ use App\Models\KartuStok;
 use App\Models\Pekerja;
 use App\Models\Produk;
 use App\Models\StokOpname;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 
 class StokControllerApi extends Controller
 {

@@ -32,10 +32,10 @@ class TransaksiControllerApi extends Controller
             'valuediskon' => 'nullable|numeric|min:0',
             'tipediskon' => 'nullable|string|in:persen,nominal',
         ]);
-    
+
         $idTransaksi = 'TRX-' . $validated['id_toko'] . now()->format('dmYHis') . rand(1000, 9999);
         DB::beginTransaction();
-    
+
         try {
             $transaksi = Transaksi::create([
                 'id_transaksi' => $idTransaksi,
@@ -51,20 +51,20 @@ class TransaksiControllerApi extends Controller
                 'tipediskon' => $validated['tipediskon'],
                 'created_at' => now(),
             ]);
-    
+
             $totalHarga = 0;
             $itemsDetails = [];
-    
+
             foreach ($validated['items'] as $item) {
                 $produk = Produk::findOrFail($item['kode_produk']);
                 $harga = $produk->harga;
                 $subtotal = $harga * $item['qty'];
-    
+
                 if ($produk->is_stock_managed && $produk->stok < $item['qty']) {
                     DB::rollBack();
                     return response()->json(['message' => 'Stok produk ' . $produk->nama_produk . ' tidak cukup'], 400);
                 }
-    
+
                 DetailTransaksi::create([
                     'id_transaksi' => $idTransaksi,
                     'kode_produk' => $item['kode_produk'],
@@ -73,7 +73,7 @@ class TransaksiControllerApi extends Controller
                     'subtotal' => $subtotal,
                     'created_at' => now(),
                 ]);
-    
+
                 $totalHarga += $subtotal;
                 $itemsDetails[] = [
                     'kode_produk' => $item['kode_produk'],
@@ -83,13 +83,13 @@ class TransaksiControllerApi extends Controller
                     'subtotal' => $subtotal,
                 ];
             }
-    
+
             foreach ($validated['items'] as $item) {
                 $produk = Produk::findOrFail($item['kode_produk']);
                 if ($produk->is_stock_managed) {
                     $stokAwal = $produk->stok;
                     $produk->decrement('stok', $item['qty']);
-    
+
                     KartuStok::create([
                         'kode_produk' => $item['kode_produk'],
                         'jenis_transaksi' => 'keluar',
@@ -101,32 +101,32 @@ class TransaksiControllerApi extends Controller
                     ]);
                 }
             }
-    
+
             $ppnAmount = ($validated['ppn'] ?? 0) / 100 * $totalHarga;
             $totalSetelahPPN = $totalHarga + $ppnAmount;
-            
+
             $diskon = 0;
             if (!empty($validated['valuediskon'])) {
                 $diskon = ($validated['tipediskon'] === 'persen') ? ($validated['valuediskon'] / 100 * $totalSetelahPPN) : $validated['valuediskon'];
             }
-            
+
             $calculatedTotalAkhir = $totalSetelahPPN - $diskon;
             $kembalian = $validated['bayar'] - $calculatedTotalAkhir;
-    
+
             $transaksi->update([
                 'totalharga' => $calculatedTotalAkhir,
                 'kembalian' => $kembalian,
             ]);
-    
+
             $user = User::with(['pekerja', 'pemilik'])->find($validated['id_user']);
             $toko = Toko::find($validated['id_toko']);
-    
+
             $userInfo = [
                 'id_user' => $user->id_user,
                 'nama' => $user->pekerja ? $user->pekerja->nama_pekerja : ($user->pemilik ? $user->pemilik->nama_pemilik : null),
                 'posisi' => $user->pekerja ? "pekerja" : 'Pemilik',
             ];
-    
+
             $tokoInfo = $toko ? [
                 'id_toko' => $toko->id_toko,
                 'nama_toko' => $toko->nama_toko,
@@ -136,9 +136,9 @@ class TransaksiControllerApi extends Controller
                 'img' => $toko->url_img ? base64_encode(file_get_contents(public_path($toko->url_img))) : null,
                 'mime' => $toko->url_img ? mime_content_type(public_path($toko->url_img)) : null,
             ] : null;
-    
+
             DB::commit();
-    
+
             return response()->json([
                 'message' => 'Checkout berhasil',
                 'id_transaksi' => $idTransaksi,
@@ -154,7 +154,7 @@ class TransaksiControllerApi extends Controller
                 'created_at' => $transaksi->created_at,
                 'user' => $userInfo,
                 'toko' => $tokoInfo,
-                'items' => $itemsDetails,
+                'detail_transaksi' => $itemsDetails,
             ]);
         } catch (\Exception $e) {
             Log::error('Transaksi gagal: ' . $e->getMessage(), ['exception' => $e, 'user_id' => auth()->id_user ?? null]);
