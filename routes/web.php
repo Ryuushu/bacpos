@@ -21,8 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/pelanggan/add', [AdminController::class, 'create'])->name('pemilik.add');
     Route::get('/toko-client/{id}', [AdminController::class, 'toko'])->name('toko.index');
     Route::post('/toko/ubah-verifikasi/{id}', [AdminController::class, 'ubahVerifikasi'])->name('toko.ubahVerifikasi');
-
-
+    Route::get('/toko/{storeId}/status', [AdminController::class, 'getStatus'])->name('toko.status');
 });
 
 require __DIR__ . '/auth.php';

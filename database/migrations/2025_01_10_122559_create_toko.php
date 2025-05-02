@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('instagram', 100)->nullable();
             $table->string('url_img')->nullable();
             $table->boolean('is_verified')->default(0);
+            $table->timestamp('start_date_langganan')->nullable();
+            $table->timestamp('exp_date_langganan')->nullable();
             $table->timestamps();
         });
     }

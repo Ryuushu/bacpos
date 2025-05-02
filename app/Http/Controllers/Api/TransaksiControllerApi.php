@@ -152,7 +152,14 @@ class TransaksiControllerApi extends Controller
                 'jenis_pembayaran' => $transaksi->jenis_pembayaran,
                 'kembalian' => $kembalian,
                 'created_at' => $transaksi->created_at,
-                'user' => $userInfo,
+                'user' => [
+                    'id_user' => $user->id_user,
+                    'email' => $user->email,
+                    'is_verified' => $user->is_verified,
+                    'created_at' => $user->created_at,
+                    'pekerja' => $user->pekerja,
+                    'pemilik' => $user->pemilik,
+                ],
                 'toko' => $tokoInfo,
                 'detail_transaksi' => $transaksi->detailTransaksi->map(function ($detail) {
                     return [

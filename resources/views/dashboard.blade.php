@@ -15,6 +15,15 @@
                 </div>
             </div>
 
+            @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+
+                    <li>{{ $errors }}</li>
+
+                </ul>
+            </div>
+            @endif
             <!-- Pencarian Pelanggan -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <div class="flex flex-wrap  items-center justify-between mb-4">

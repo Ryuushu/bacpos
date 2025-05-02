@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,7 +19,9 @@ class Toko extends Model
         'alamat_toko',
         'whatsapp',
         'instagram',
-        'url_img'
+        'url_img',
+        'exp_date_langganan',
+        'start_date_langganan'
     ];
     public function kategori()
     {
@@ -33,6 +36,4 @@ class Toko extends Model
     {
         return $this->hasMany(Pekerja::class, 'id_toko');
     }
-    
 }
-
